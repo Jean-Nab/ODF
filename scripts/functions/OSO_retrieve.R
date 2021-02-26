@@ -2,19 +2,19 @@
 
 
 
-extract_OSO(dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv",
-            names_coord = c("X_barycentre_L93","Y_barycentre_L93"),
-            buffer_medium = 50,
-            buffer_large = 500,
-            dsnRasterOSO = "C:/Users/Travail/Desktop/Ressource QGis/france/OCS_2018_CESBIO.tif")
-
-
-
-dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
-names_coord = c("X_barycentre_L93","Y_barycentre_L93")
-buffer_medium = 50
-buffer_large = 500
-dsnRasterOSO = "C:/Users/Travail/Desktop/Ressource QGis/france/OCS_2018_CESBIO.tif"
+## extract_OSO(dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv",
+##             names_coord = c("X_barycentre_L93","Y_barycentre_L93"),
+##             buffer_medium = 50,
+##             buffer_large = 500,
+##             dsnRasterOSO = "C:/Users/Travail/Desktop/Ressource QGis/france/OCS_2018_CESBIO.tif")
+## 
+## 
+## 
+## dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
+## names_coord = c("X_barycentre_L93","Y_barycentre_L93")
+## buffer_medium = 50
+## buffer_large = 500
+## dsnRasterOSO = "C:/Users/Travail/Desktop/Ressource QGis/france/OCS_2018_CESBIO.tif"
 
 
 
