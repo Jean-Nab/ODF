@@ -1,8 +1,11 @@
 output/
 data/
-test_biomod/
-output_brouillon/
-DS/
+biblio/
+
+0X*.R
+
+
+
 
 
 .Rproj.user
@@ -27,8 +30,6 @@ DS/
 #*#
 _*
 .#*
-
-
 *.odt
 *.odp
 *.rdb
@@ -38,22 +39,3 @@ _*
 *.qgz
 
 
-brouillon.R
-brouillon2.R
-brouillon3.R
-brouillon4.R
-0X2_epoc_maille.R
-brouillon5.R
-brouillon_visu_effort_echan.R
-brouillon_visu_effort_echantillonnage.R
-brouillon6.R
-brouillon_yves.R
-brouillon_rF.R
-brouillon_yves2.R
-08test2_Distance_Sampling.R
-08test_Distance_Sampling.R
-
-
-biomod
-brouillon*
-proj_these*
