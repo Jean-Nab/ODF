@@ -7,21 +7,21 @@
 
 
 ##  # telechargement du shape route
-##  library(curl)
-##  url = "ftp://ROUTE_500_ext:UqueemievaiDah3k@ftp3.ign.fr/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04.7z.001"
-##  h = new_handle(dirlistonly=TRUE)
-##  con = curl(url, "r", h)
-##  close(con)
+##    library(curl)
+##    url = "ftp://ROUTE_500_ext:UqueemievaiDah3k@ftp3.ign.fr/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04.7z.001"
+##    h = new_handle(dirlistonly=TRUE)
+##    con = curl(url, "r", h)
+##    close(con)
 ##  
-##  curl_download(url,destfile = "C://Users/Travail/Desktop/TEST.7z") # fichier en .7z
+##    curl_download(url,destfile = "C://Users/Travail/Desktop/TEST.7z") # fichier en .7z
 
-dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
-names_coord = c("X_barycentre_L93","Y_barycentre_L93")
-buffer_small = 50
-buffer_medium = 500
-buffer_large = 5000
-dsnRoute = "C:/Users/Travail/Desktop/Ressource QGis/france/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04/ROUTE500/1_DONNEES_LIVRAISON_2020-08-00223/R500_3-0_SHP_LAMB93_FXX-ED201/RESEAU_ROUTIER/TRONCON_ROUTE.shp"
-dsnFer = "C:/Users/Travail/Desktop/Ressource QGis/france/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04/ROUTE500/1_DONNEES_LIVRAISON_2020-08-00223/R500_3-0_SHP_LAMB93_FXX-ED201/RESEAU_FERRE/TRONCON_VOIE_FERREE.shp"
+## dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
+## names_coord = c("X_barycentre_L93","Y_barycentre_L93")
+## buffer_small = 50
+## buffer_medium = 500
+## buffer_large = 5000
+## dsnRoute = "C:/Users/Travail/Desktop/Ressource QGis/france/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04/ROUTE500/1_DONNEES_LIVRAISON_2020-08-00223/R500_3-0_SHP_LAMB93_FXX-ED201/RESEAU_ROUTIER/TRONCON_ROUTE.shp"
+## dsnFer = "C:/Users/Travail/Desktop/Ressource QGis/france/ROUTE500_3-0__SHP_LAMB93_FXX_2020-08-04/ROUTE500/1_DONNEES_LIVRAISON_2020-08-00223/R500_3-0_SHP_LAMB93_FXX-ED201/RESEAU_FERRE/TRONCON_VOIE_FERREE.shp"
 
 # extract_route(dsnTable,names_coord,buffer_small,buffer_medium,buffer_large,dsnRoute,dsnFer)
 
