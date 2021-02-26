@@ -5,13 +5,13 @@
 
 
 
-dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
-names_coord = c("X_barycentre_L93","Y_barycentre_L93")
-buffer_small = 50
-buffer_medium = 500
-buffer_large = 5000
-dsnTronc = "C:/Users/Travail/Desktop/Ressource QGis/france/hydrographie/TronconHydrograElt_FXX.shp"
-dsnSurf = "C:/Users/Travail/Desktop/Ressource QGis/france/hydrographie/EltHydroSurface_FXX.shp"
+## dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
+## names_coord = c("X_barycentre_L93","Y_barycentre_L93")
+## buffer_small = 50
+## buffer_medium = 500
+## buffer_large = 5000
+## dsnTronc = "C:/Users/Travail/Desktop/Ressource QGis/france/hydrographie/TronconHydrograElt_FXX.shp"
+## dsnSurf = "C:/Users/Travail/Desktop/Ressource QGis/france/hydrographie/EltHydroSurface_FXX.shp"
 
 
 
