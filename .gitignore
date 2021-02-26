@@ -2,11 +2,6 @@ output/
 data/
 biblio/
 
-ODF/scripts/0X1a_CLC_L93.R
-
-
-
-
 
 .Rproj.user
 .Rhistory
@@ -39,3 +34,4 @@ _*
 *.qgz
 
 
+scripts/0X1a_CLC_L93.R
