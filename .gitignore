@@ -1,6 +1,7 @@
 output/
 data/
 biblio/
+utils/
 
 
 .Rproj.user
@@ -32,6 +33,13 @@ _*
 *.docx
 *.csv
 *.qgz
+
+*.exe
+*.gdf
+*.net
+*.tree
+
+
 
 
 0X*
