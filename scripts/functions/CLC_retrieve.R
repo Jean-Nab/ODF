@@ -81,14 +81,13 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
                                        clear = F)
      
       pb_m$tick(0)
-      Sys.sleep(3)
+      Sys.sleep(1/20)
       
       
       # boucle de 305 en 305: ----
       for(i in vec.iteration_med){
         
         PointBuffMed.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),] # si add condition --> condition - 1
-        
         
         CLC_hab.tmp <- raster::extract(x = CLC, 
                                y = PointBuffMed.tmp,
@@ -162,7 +161,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
                                        clear = F)
       
       pb_l$tick(0)
-      Sys.sleep(3)
+      Sys.sleep(1/20)
       
       
       # boucle de 305 en 305: ----
