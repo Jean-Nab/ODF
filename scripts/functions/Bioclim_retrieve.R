@@ -2,25 +2,25 @@
 
 ##  # pre-requis : crop bioclim selon france + stacking/save sur disque
 #######################################################################
-##  library(sf)
-##  library(raster)
-##  
-##  
-##  fra.adm <- st_read(dsn = "C:/Users/Travail/Desktop/Ressource QGis/france/adm/FRA_adm0.shp")
-##  bioclim <- stack(list.files(path = "C:/Users/Travail/Desktop/Ressource QGis/Bioclim_world/", pattern = "wc2.1_30s",full.names = T))
-##   
-##  fra.buff <- st_transform(fra.adm,crs=2154) ; fra.buff <- st_buffer(fra.buff, 25000)
-##  fra.buff <- st_transform(fra.buff, crs = 4326)
-##  
-##  fra.bioclim <- crop(x = bioclim, y = as_Spatial(fra.buff))
-##  
-##  fra.bioclim2 <- projectRaster(from = fra.bioclim,
-##  crs = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
-##  method = "ngb"
-##  )
-##  
-##  
-##  writeRaster(fra.bioclim2, filename = "C:/Users/Travail/Desktop/Ressource QGis/france/bioclim/bioclim_30s_degrees.grd", format = "raster")
+  library(sf)
+  library(raster)
+  
+  
+  ## fra.adm <- st_read(dsn = "C:/Users/Travail/Desktop/Ressource QGis/france/adm/FRA_adm0.shp")
+  ## bioclim <- stack(list.files(path = "C:/Users/Travail/Desktop/Ressource QGis/Bioclim_world/", pattern = "wc2.1_30s",full.names = T))
+  ##  
+  ## fra.buff <- st_transform(fra.adm,crs=2154) ; fra.buff <- st_buffer(fra.buff, 25000)
+  ## fra.buff2 <- st_transform(fra.buff, crs = 4326)
+  ## 
+  ## fra.bioclim <- crop(x = bioclim, y = as_Spatial(fra.buff2))
+  ## 
+  ## fra.bioclim2 <- projectRaster(from = fra.bioclim,
+  ## crs = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +datum=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+  ## method = "ngb"
+  ## )
+  ## 
+  ## 
+  ## writeRaster(fra.bioclim2, filename = "C:/Users/Travail/Desktop/Ressource QGis/france/bioclim/bioclim_30s_degrees.grd", format = "raster")
 
 
 
@@ -51,9 +51,12 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
   BuffLarg <- buffer_large
   
   # Retrait des NAs
-  testCoords=match(Coords,names(Point))
-  Point=subset(Point,!is.na(as.data.frame(Point)[,testCoords[1]]))
-  Point=subset(Point,!is.na(as.data.frame(Point)[,testCoords[2]]))
+  testCoords <- match(Coords,names(Point))
+  
+  if(any(is.na(as.data.frame(Point)[,testCoords[1]]))|any(is.na(as.data.frame(Point)[,testCoords[2]])) == TRUE) {
+    Point=base::subset(x = Point,subset = !is.na(Point[,testCoords[1]]))
+    Point=base::subset(x = Point,subset = !is.na(Point[,testCoords[2]]))
+  }
   
   Point$id <- c(1:nrow(Point))
   Point$ID_extract <- c(rep(1:nrow(Point)))
