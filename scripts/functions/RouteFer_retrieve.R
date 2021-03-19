@@ -70,6 +70,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
   ROUTE$VOCATION <- as.character(ROUTE$VOCATION)
   
   FER <- st_read(dsn = dsnFer)
+  FER$NATURE <- as.character(FER$NATURE)
   
   
   # Extraction ROUTE ------
@@ -419,7 +420,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
                                        clear = F)
     
     
-    pb_m$tick(0)
+    pb_l$tick(0)
     Sys.sleep(1/20)
     
     for(i in 1:nrow(PointBuffLarg)){
