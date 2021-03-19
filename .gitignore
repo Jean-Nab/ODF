@@ -38,6 +38,8 @@ _*
 *.gdf
 *.net
 *.tree
+*.gml
+*.graphml
 
 
 
