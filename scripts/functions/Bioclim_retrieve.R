@@ -2,8 +2,8 @@
 
 ##  # pre-requis : crop bioclim selon france + stacking/save sur disque
 #######################################################################
-  library(sf)
-  library(raster)
+  ## library(sf)
+  ## library(raster)
   
   
   ## fra.adm <- st_read(dsn = "C:/Users/Travail/Desktop/Ressource QGis/france/adm/FRA_adm0.shp")
@@ -24,11 +24,11 @@
 
 
 
- dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
- names_coord = c("X_barycentre_L93","Y_barycentre_L93")
- buffer_medium = 500
- buffer_large = 5000
- dsnRaster = "C:/Users/Travail/Desktop/Ressource QGis/france/bioclim/bioclim_30s_degrees.grd"
+ ## dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
+ ## names_coord = c("X_barycentre_L93","Y_barycentre_L93")
+ ## buffer_medium = 500
+ ## buffer_large = 5000
+ ## dsnRaster = "C:/Users/Travail/Desktop/Ressource QGis/france/bioclim/bioclim_30s_degrees.grd"
 
 
 
