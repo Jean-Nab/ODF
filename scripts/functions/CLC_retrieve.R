@@ -30,7 +30,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
   library(progress)
   
   # recup' data/raster ----
-  cat("\t----\tDebut du chargement des données\t----\n")
+  cat("\t----\tDebut du chargement des donnees\t----\n")
   
     Point <- read.csv(dsnTable)
     Coords <- names_coord
@@ -64,7 +64,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     ##    PointL_L93=crop(PointL_L93,Hab)
     ##    PointL=subset(PointL,PointL$id %in% PointL_L93$id)
     
-    cat("\t----\tFin du chargement des données\t----\n")
+    cat("\t----\tFin du chargement des donnees\t----\n")
   
   # EXTRACTION ----
     # Buffer medium ----
