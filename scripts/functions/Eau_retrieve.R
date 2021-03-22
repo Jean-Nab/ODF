@@ -73,7 +73,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Smal) <- c("id")
     
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointbuffSmal),
+    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
                                        format = "Extraction longueur des Troncons d'eau buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -81,7 +81,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffSmal)){ # nrow(PointbuffSmal)
+    for(i in 1:nrow(PointBuffSmal)){ # nrow(PointBuffSmal)
       
       Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -142,7 +142,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Med) <- c("id")
     
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointbuffMed),
+    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
                                        format = "Extraction longueur des Troncons d'eau buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -150,7 +150,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffMed)){ # nrow(PointbuffMed)
+    for(i in 1:nrow(PointBuffMed)){ # nrow(PointBuffMed)
       
       Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -212,7 +212,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Larg) <- c("id")
     
     # initialisation de la barre de progression
-    pb_l <- progress::progress_bar$new(total = nrow(PointbuffLarg),
+    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
                                        format = "Extraction longueur des Troncons d'eau buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -220,7 +220,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffLarg)){ # nrow(PointbuffLarg)
+    for(i in 1:nrow(PointBuffLarg)){ # nrow(PointBuffLarg)
       
       Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -297,7 +297,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Smal) <- c("id")
     
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointbuffSmal),
+    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
                                        format = "Extraction Aire des surfaces d'eau buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -305,7 +305,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffSmal)){ # nrow(PointbuffSmal)
+    for(i in 1:nrow(PointBuffSmal)){ # nrow(PointBuffSmal)
       
       Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -370,7 +370,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Med) <- c("id")
     
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointbuffMed),
+    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
                                        format = "Extraction Aire des surfaces d'eau buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -378,7 +378,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffMed)){ # nrow(PointbuffMed)
+    for(i in 1:nrow(PointBuffMed)){ # nrow(PointBuffMed)
       
       Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -443,15 +443,15 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     colnames(Extr_Larg) <- c("id")
     
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointbuffLarg),
+    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
                                        format = "Extraction Aire des surfaces d'eau buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
     
-    pb_m$tick(0)
+    pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointbuffLarg)){ # nrow(PointbuffLarg)
+    for(i in 1:nrow(PointBuffLarg)){ # nrow(PointBuffLarg)
       
       Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
       
@@ -500,7 +500,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
       
       
       # actualisation de la progression
-      pb_m$tick()
+      pb_l$tick()
       Sys.sleep(1 / 100)
       
     }
