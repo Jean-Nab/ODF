@@ -30,7 +30,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     library(progress)
     
     # recup' data/raster ----
-    cat("\t----\tDebut du chargement des données\t----\n")
+    cat("\t----\tDebut du chargement des donnees\t----\n")
     
     Point <- read.csv(dsnTable)
     Coords <- names_coord
@@ -63,7 +63,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     ##    PointL_L93=crop(PointL_L93,Hab)
     ##    PointL=subset(PointL,PointL$id %in% PointL_L93$id)
     
-    cat("\t----\tFin du chargement des données\t----\n")
+    cat("\t----\tFin du chargement des donnees\t----\n")
   
   # EXTRACTION ----
     # Buffer medium ----
@@ -82,7 +82,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     
       
       pb_m$tick(0)
-      Sys.sleep(3)
+      Sys.sleep(1/20)
       
       # boucle de 305 en 305: ----
       for(i in vec.iteration_med){
@@ -157,7 +157,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
                                          clear = F)
       
       pb_l$tick(0)
-      Sys.sleep(3)
+      Sys.sleep(1/20)
       
       
       # boucle ----
