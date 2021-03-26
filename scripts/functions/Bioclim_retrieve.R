@@ -99,6 +99,8 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
   # Jointure des tables ----
     SPBIO <- dplyr::left_join(SpBiom,SpBiol, by = "id")
   
+      
+    save(SPBIO, file = "C:/git/ODF/output/function_output/Rimage_BIOCLIM_envEPOC.RData") # securite
     write.csv(SPBIO, file = "C:/git/ODF/output/function_output/BIOCLIM_envEPOC.csv", row.names = F)
     
     
