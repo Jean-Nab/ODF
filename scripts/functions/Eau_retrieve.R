@@ -68,69 +68,72 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     # Buffer locaux : small -----
     
     cat(paste0(c("\t---\tTroncons d'eau dans un buffer de :",BuffSmal," m","\t---\n")))
+  
+    vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
-    Extr_Smal <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Smal) <- c("id")
+    TroncSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(TroncSmal) <- c("id")
+    class(TroncSmal$Etat) <- class(TRONC$Etat)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
+    pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
                                        format = "Extraction longueur des Troncons d'eau buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffSmal)){ # nrow(PointBuffSmal)
+    
+    for(i in vec.iteration_smal){
+      Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
       
-      Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      TroncSmal.tmp <- st_intersection(TRONC, Point.tmp) # intersection en block
       
-      TroncSmal.tmp <- st_intersection(TRONC, Point.tmp)
-      
-      if(nrow(TroncSmal.tmp) > 0){
-        TroncSmal.tmp$Longueur_intersect <- as.numeric(st_length(TroncSmal.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Tronc --> recuperation des infos  
-        
-        TroncSmal.tmp[1,"id"] <- Point.tmp$id
-        TroncSmal.tmp$Longueur_intersect <- 0
-        TroncSmal.tmp$Etat <- NA
+        if(nrow(TroncSmal.tmp[TroncSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          TroncSmal.tmp[TroncSmal.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncSmal.tmp[TroncSmal.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
+        }
         
       }
       
+      # jointure des tables de la condition presence de routes
+      TroncSmal.tmp <- st_drop_geometry(TroncSmal.tmp)
       
-      # gestion de l'extractions des longueurs de Troncs intersectees
-      TroncSmal.tmp <- st_drop_geometry(TroncSmal.tmp[,c("id","Etat","Longueur_intersect")])
-      
-      # conversion long -> wide
-      TroncSmal.tmp.dt <- data.table::data.table(TroncSmal.tmp)
-      TroncSmal_wide <- data.table::dcast(TroncSmal.tmp.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-      TroncSmal_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des longueurs de Troncs intersectes par id selon le type
-      TroncSmal_wide_uniq <-  TroncSmal_wide %>%
-        group_by(id) %>%
-        mutate(SpCELs_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELs_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
-        mutate(SpCELs_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELs_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
-        mutate(SpCELs_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
-        mutate(SpCELs_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
-        
-      
-      TroncSmal_wide_uniq <- unique(TroncSmal_wide_uniq[,grep("id|SpCEL",colnames(TroncSmal_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Smal <- merge(Extr_Smal, TroncSmal_wide_uniq,all=T)
-      
+      TroncSmal <- rbind(TroncSmal,TroncSmal.tmp[,c("id","Etat","Longueur_intersect")])
       
       # actualisation de la progression
       pb_s$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Troncs intersectees
+    TroncSmal <- rbind(TroncSmal,Rebus)
+      
+    # conversion long -> wide
+    TroncSmal.dt <- data.table::data.table(TroncSmal)
+    TroncSmal_wide <- data.table::dcast(TroncSmal.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+
+    
+    # somme des longueurs de Troncs intersectes par id selon le type
+    Extr_Smal <-  TroncSmal_wide %>%
+      group_by(id) %>%
+      mutate(SpCELs_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELs_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
+      mutate(SpCELs_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELs_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
+      mutate(SpCELs_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
+      mutate(SpCELs_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
+      
+    
+    Extr_Smal <- unique(Extr_Smal[,grep("id|SpCEL",colnames(Extr_Smal))])
+
     
     
     #############################
@@ -138,68 +141,70 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tTroncons d'eau dans un buffer de :",BuffMed," m","\t---\n")))
     
-    Extr_Med <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Med) <- c("id")
+    vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    TroncMed <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(TroncMed) <- c("id")
+    class(TroncMed$Etat) <- class(TRONC$Etat)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
+    pb_m <- progress::progress_bar$new(total = length(vec.iteration_med),
                                        format = "Extraction longueur des Troncons d'eau buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffMed)){ # nrow(PointBuffMed)
+    
+    for(i in vec.iteration_med){
+      Point.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),]
       
-      Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      TroncMed.tmp <- st_intersection(TRONC, Point.tmp) # intersection en block
       
-      TroncMed.tmp <- st_intersection(TRONC, Point.tmp)
-      
-      if(nrow(TroncMed.tmp) > 0){
-        TroncMed.tmp$Longueur_intersect <- as.numeric(st_length(TroncMed.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Tronc --> recuperation des infos  
-        
-        TroncMed.tmp[1,"id"] <- Point.tmp$id
-        TroncMed.tmp$Longueur_intersect <- 0
-        TroncMed.tmp$Etat <- NA
+        if(nrow(TroncMed.tmp[TroncMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          TroncMed.tmp[TroncMed.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncMed.tmp[TroncMed.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
+        }
         
       }
       
+      # jointure des tables de la condition presence de routes
+      TroncMed.tmp <- st_drop_geometry(TroncMed.tmp)
       
-      # gestion de l'extractions des longueurs de Troncs intersectees
-      TroncMed.tmp <- st_drop_geometry(TroncMed.tmp[,c("id","Etat","Longueur_intersect")])
-      
-      # conversion long -> wide
-      TroncMed.tmp.dt <- data.table::data.table(TroncMed.tmp)
-      TroncMed_wide <- data.table::dcast(TroncMed.tmp.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-      TroncMed_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des longueurs de Troncs intersectes par id selon le type
-      TroncMed_wide_uniq <-  TroncMed_wide %>%
-        group_by(id) %>%
-        mutate(SpCELm_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELm_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
-        mutate(SpCELm_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELm_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
-        mutate(SpCELm_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
-        mutate(SpCELm_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
-      
-      
-      TroncMed_wide_uniq <- unique(TroncMed_wide_uniq[,grep("id|SpCEL",colnames(TroncMed_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Med <- merge(Extr_Med, TroncMed_wide_uniq,all=T)
-      
+      TroncMed <- rbind(TroncMed,TroncMed.tmp[,c("id","Etat","Longueur_intersect")])
       
       # actualisation de la progression
       pb_m$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Troncs intersectees
+    TroncMed <- rbind(TroncMed,Rebus)
+    
+    # conversion long -> wide
+    TroncMed.dt <- data.table::data.table(TroncMed)
+    TroncMed_wide <- data.table::dcast(TroncMed.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+    
+    
+    # somme des longueurs de Troncs intersectes par id selon le type
+    Extr_Med <-  TroncMed_wide %>%
+      group_by(id) %>%
+      mutate(SpCELm_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELm_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
+      mutate(SpCELm_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELm_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
+      mutate(SpCELm_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
+      mutate(SpCELm_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
+    
+    
+    Extr_Med <- unique(Extr_Med[,grep("id|SpCEL",colnames(Extr_Med))])
     
     
     
@@ -208,76 +213,80 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tTroncons d'eau dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    Extr_Larg <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Larg) <- c("id")
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    TroncLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(TroncLarg) <- c("id")
+    class(TroncLarg$Etat) <- class(TRONC$Etat)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
+    pb_l <- progress::progress_bar$new(total = length(vec.iteration_larg),
                                        format = "Extraction longueur des Troncons d'eau buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffLarg)){ # nrow(PointBuffLarg)
+    
+    for(i in vec.iteration_larg){
+      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
       
-      Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      TroncLarg.tmp <- st_intersection(TRONC, Point.tmp) # intersection en block
       
-      TroncLarg.tmp <- st_intersection(TRONC, Point.tmp)
-      
-      if(nrow(TroncLarg.tmp) > 0){
-        TroncLarg.tmp$Longueur_intersect <- as.numeric(st_length(TroncLarg.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Tronc --> recuperation des infos  
-        
-        TroncLarg.tmp[1,"id"] <- Point.tmp$id
-        TroncLarg.tmp$Longueur_intersect <- 0
-        TroncLarg.tmp$Etat <- NA
+        if(nrow(TroncLarg.tmp[TroncLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          TroncLarg.tmp[TroncLarg.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncLarg.tmp[TroncLarg.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
+        }
         
       }
       
+      # jointure des tables de la condition presence de routes
+      TroncLarg.tmp <- st_drop_geometry(TroncLarg.tmp)
       
-      # gestion de l'extractions des longueurs de Troncs intersectees
-      TroncLarg.tmp <- st_drop_geometry(TroncLarg.tmp[,c("id","Etat","Longueur_intersect")])
-      
-      # conversion long -> wide
-      TroncLarg.tmp.dt <- data.table::data.table(TroncLarg.tmp)
-      TroncLarg_wide <- data.table::dcast(TroncLarg.tmp.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-      TroncLarg_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des longueurs de Troncs intersectes par id selon le type
-      TroncLarg_wide_uniq <-  TroncLarg_wide %>%
-        group_by(id) %>%
-        mutate(SpCELl_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELl_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
-        mutate(SpCELl_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
-        mutate(SpCELl_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
-        mutate(SpCELl_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
-        mutate(SpCELl_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
-      
-      
-      TroncLarg_wide_uniq <- unique(TroncLarg_wide_uniq[,grep("id|SpCEL",colnames(TroncLarg_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Larg <- merge(Extr_Larg, TroncLarg_wide_uniq,all=T)
-      
+      TroncLarg <- rbind(TroncLarg,TroncLarg.tmp[,c("id","Etat","Longueur_intersect")])
       
       # actualisation de la progression
       pb_l$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Troncs intersectees
+    TroncLarg <- rbind(TroncLarg,Rebus)
+    
+    # conversion long -> wide
+    TroncLarg.dt <- data.table::data.table(TroncLarg)
+    TroncLarg_wide <- data.table::dcast(TroncLarg.dt,id + Longueur_intersect ~ Etat, value.var = "Longueur_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+    
+    
+    # somme des longueurs de Troncs intersectes par id selon le type
+    Extr_Larg <-  TroncLarg_wide %>%
+      group_by(id) %>%
+      mutate(SpCELl_1 = if(length(grep("Permanent",colnames(.))) > 0){sum(`Permanent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELl_2 = if(length(grep("Fictif",colnames(.))) > 0){sum(`Fictif`)}else{sum(`NA`)}) %>%
+      mutate(SpCELl_3 = if(length(grep("Intermittent",colnames(.))) > 0){sum(`Intermittent`)}else{sum(`NA`)}) %>%
+      mutate(SpCELl_4 = if(length(grep("Inconnu",colnames(.))) > 0){sum(`Inconnu`)}else{sum(`NA`)}) %>%
+      mutate(SpCELl_5 = if(length(grep("En attente de mise à jour",colnames(.))) > 0){sum(`En attente de mise à jour`)}else{sum(`NA`)}) %>%
+      mutate(SpCELl_6 = if(length(grep("A sec",colnames(.))) > 0){sum(`A sec`)}else{sum(`NA`)})
+    
+    
+    Extr_Larg <- unique(Extr_Larg[,grep("id|SpCEL",colnames(Extr_Larg))])
+    
     
   # Jointure des tables d'extractions des differents buffers
     SpTRONC <- left_join(Extr_Smal,Extr_Med, by="id")
     SpTRONC <- left_join(SpTRONC,Extr_Larg, by="id")
     
-    SpTRONC <- dplyr::left_join(SpTRONC, Point[,c("id","X_barycentre_L93","Y_barycentre_L93","ID_liste")],by="id") # add d'informations sur les listes
+    SpTRONC <- dplyr::left_join(SpTRONC, Point[,c("id",Coords,"ID_liste")],by="id") # add d'informations sur les listes
 
-    
+
+    save(SpTRONC, file = "C:/git/ODF/output/function_output/Rimage_TRONCONS_envEPOC.RData") # securite
     write.csv(SpTRONC, file = "C:/git/ODF/output/function_output/TRONCONS_envEPOC.csv", row.names = F)
     
     
@@ -293,71 +302,73 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tSurfaces d'eau dans un buffer de :",BuffSmal," m","\t---\n")))
     
-    Extr_Smal <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Smal) <- c("id")
+    vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    SurfSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(SurfSmal) <- c("id")
+    class(SurfSmal$Nature) <- class(SURF$Nature)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
+    pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
                                        format = "Extraction Aire des surfaces d'eau buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffSmal)){ # nrow(PointBuffSmal)
+    
+    for(i in vec.iteration_smal){
+      Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
       
-      Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      SurfSmal.tmp <- st_intersection(SURF, Point.tmp) # intersection en block
       
-      SurfSmal.tmp <- st_intersection(SURF, Point.tmp)
-      
-      if(nrow(SurfSmal.tmp) > 0){
-        SurfSmal.tmp$Aire_intersect <- as.numeric(st_area(SurfSmal.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Surf --> recuperation des infos  
-        
-        SurfSmal.tmp[1,"id"] <- Point.tmp$id
-        SurfSmal.tmp$Aire_intersect <- 0
-        SurfSmal.tmp$Nature <- NA
+        if(nrow(SurfSmal.tmp[SurfSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          SurfSmal.tmp[SurfSmal.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfSmal.tmp[SurfSmal.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Aire_intersect = 0, Nature = NA)))
+        }
         
       }
       
-      # calcul de la proportion des surfaces
-      Aire_tot <- BuffSmal^2*pi
-      SurfSmal.tmp$Aire_intersect <- SurfSmal.tmp$Aire_intersect / Aire_tot
+      # jointure des tables de la condition presence de routes
+      SurfSmal.tmp <- st_drop_geometry(SurfSmal.tmp)
       
-      # gestion de l'extractions des surfaces intersectees
-      SurfSmal.tmp <- st_drop_geometry(SurfSmal.tmp[,c("id","Nature","Aire_intersect")])
-      
-      # conversion long -> wide
-      SurfSmal.tmp.dt <- data.table::data.table(SurfSmal.tmp)
-      SurfSmal_wide <- data.table::dcast(SurfSmal.tmp.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0) # conversion long -> wide
-      SurfSmal_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des Aires de Surfs intersectes par id selon le type
-      
-      SurfSmal_wide_uniq <-  SurfSmal_wide %>%
-        group_by(id) %>%
-        mutate(SpCESs_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESs_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESs_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESs_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESs_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)}) 
-      
-      
-      SurfSmal_wide_uniq <- unique(SurfSmal_wide_uniq[,grep("id|SpCES",colnames(SurfSmal_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Smal <- merge(Extr_Smal, SurfSmal_wide_uniq,all=T)
-      
+      SurfSmal <- rbind(SurfSmal,SurfSmal.tmp[,c("id","Nature","Aire_intersect")])
       
       # actualisation de la progression
       pb_s$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Surfs intersectees
+    SurfSmal <- rbind(SurfSmal,Rebus)
+    
+    # calcul de la proportion des surfaces
+    Aire_tot <- BuffSmal^2*pi
+    SurfSmal$Aire_intersect <- SurfSmal$Aire_intersect / Aire_tot
+    
+    # conversion long -> wide
+    SurfSmal.dt <- data.table::data.table(SurfSmal)
+    SurfSmal_wide <- data.table::dcast(SurfSmal.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+    
+    
+    # somme des longueurs de Surfs intersectes par id selon le type
+    Extr_Smal <-  SurfSmal_wide %>%
+      group_by(id) %>%
+      mutate(SpCESs_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESs_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESs_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESs_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESs_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)})
+    
+    
+    Extr_Smal <- unique(Extr_Smal[,grep("id|SpCES",colnames(Extr_Smal))])
     
     
   
@@ -366,71 +377,74 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tSurfaces d'eau dans un buffer de :",BuffMed," m","\t---\n")))
     
-    Extr_Med <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Med) <- c("id")
+    vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    SurfMed <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(SurfMed) <- c("id")
+    class(SurfMed$Nature) <- class(SURF$Nature)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
+    pb_m <- progress::progress_bar$new(total = length(vec.iteration_med),
                                        format = "Extraction Aire des surfaces d'eau buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffMed)){ # nrow(PointBuffMed)
+    
+    for(i in vec.iteration_med){
+      Point.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),]
       
-      Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      SurfMed.tmp <- st_intersection(SURF, Point.tmp) # intersection en block
       
-      SurfMed.tmp <- st_intersection(SURF, Point.tmp)
-      
-      if(nrow(SurfMed.tmp) > 0){
-        SurfMed.tmp$Aire_intersect <- as.numeric(st_area(SurfMed.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Surf --> recuperation des infos  
-        
-        SurfMed.tmp[1,"id"] <- Point.tmp$id
-        SurfMed.tmp$Aire_intersect <- 0
-        SurfMed.tmp$Nature <- NA
+        if(nrow(SurfMed.tmp[SurfMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          SurfMed.tmp[SurfMed.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfMed.tmp[SurfMed.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Aire_intersect = 0, Nature = NA)))
+        }
         
       }
       
-      # calcul de la proportion des surfaces
-      Aire_tot <- BuffMed^2*pi
-      SurfMed.tmp$Aire_intersect <- SurfMed.tmp$Aire_intersect / Aire_tot
+      # jointure des tables de la condition presence de routes
+      SurfMed.tmp <- st_drop_geometry(SurfMed.tmp)
       
-      # gestion de l'extractions des surfaces intersectees
-      SurfMed.tmp <- st_drop_geometry(SurfMed.tmp[,c("id","Nature","Aire_intersect")])
-      
-      # conversion long -> wide
-      SurfMed.tmp.dt <- data.table::data.table(SurfMed.tmp)
-      SurfMed_wide <- data.table::dcast(SurfMed.tmp.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0) # conversion long -> wide
-      SurfMed_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des Aires de Surfs intersectes par id selon le type
-      
-      SurfMed_wide_uniq <-  SurfMed_wide %>%
-        group_by(id) %>%
-        mutate(SpCESm_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESm_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESm_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESm_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESm_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)}) 
-      
-      
-      SurfMed_wide_uniq <- unique(SurfMed_wide_uniq[,grep("id|SpCES",colnames(SurfMed_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Med <- merge(Extr_Med, SurfMed_wide_uniq,all=T)
-      
+      SurfMed <- rbind(SurfMed,SurfMed.tmp[,c("id","Nature","Aire_intersect")])
       
       # actualisation de la progression
       pb_m$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Surfs intersectees
+    SurfMed <- rbind(SurfMed,Rebus)
+    
+    # calcul de la proportion des surfaces
+    Aire_tot <- BuffMed^2*pi
+    SurfMed$Aire_intersect <- SurfMed$Aire_intersect / Aire_tot
+    
+    
+    # conversion long -> wide
+    SurfMed.dt <- data.table::data.table(SurfMed)
+    SurfMed_wide <- data.table::dcast(SurfMed.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+    
+    
+    # somme des longueurs de Surfs intersectes par id selon le type
+    Extr_Med <-  SurfMed_wide %>%
+      group_by(id) %>%
+      mutate(SpCESm_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESm_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESm_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESm_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESm_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)})
+    
+    
+    Extr_Med <- unique(Extr_Med[,grep("id|SpCES",colnames(Extr_Med))])
   
   
     
@@ -439,71 +453,74 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tSurfaces d'eau dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    Extr_Larg <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Larg) <- c("id")
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    SurfLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(SurfLarg) <- c("id")
+    class(SurfLarg$Nature) <- class(SURF$Nature)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
+    pb_l <- progress::progress_bar$new(total = length(vec.iteration_larg),
                                        format = "Extraction Aire des surfaces d'eau buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
-    
     
     pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffLarg)){ # nrow(PointBuffLarg)
+    
+    for(i in vec.iteration_larg){
+      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
       
-      Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      SurfLarg.tmp <- st_intersection(SURF, Point.tmp) # intersection en block
       
-      SurfLarg.tmp <- st_intersection(SURF, Point.tmp)
-      
-      if(nrow(SurfLarg.tmp) > 0){
-        SurfLarg.tmp$Aire_intersect <- as.numeric(st_area(SurfLarg.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de Surf --> recuperation des infos  
-        
-        SurfLarg.tmp[1,"id"] <- Point.tmp$id
-        SurfLarg.tmp$Aire_intersect <- 0
-        SurfLarg.tmp$Nature <- NA
+        if(nrow(SurfLarg.tmp[SurfLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          SurfLarg.tmp[SurfLarg.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfLarg.tmp[SurfLarg.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Aire_intersect = 0, Nature = NA)))
+        }
         
       }
       
-      # calcul de la proportion des surfaces
-      Aire_tot <- BuffLarg^2*pi
-      SurfLarg.tmp$Aire_intersect <- SurfLarg.tmp$Aire_intersect / Aire_tot
+      # jointure des tables de la condition presence de routes
+      SurfLarg.tmp <- st_drop_geometry(SurfLarg.tmp)
       
-      # gestion de l'extractions des surfaces intersectees
-      SurfLarg.tmp <- st_drop_geometry(SurfLarg.tmp[,c("id","Nature","Aire_intersect")])
-      
-      # conversion long -> wide
-      SurfLarg.tmp.dt <- data.table::data.table(SurfLarg.tmp)
-      SurfLarg_wide <- data.table::dcast(SurfLarg.tmp.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0) # conversion long -> wide
-      SurfLarg_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des Aires de Surfs intersectes par id selon le type
-      
-      SurfLarg_wide_uniq <-  SurfLarg_wide %>%
-        group_by(id) %>%
-        mutate(SpCESl_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESl_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESl_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESl_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
-        mutate(SpCESl_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)}) 
-      
-      
-      SurfLarg_wide_uniq <- unique(SurfLarg_wide_uniq[,grep("id|SpCES",colnames(SurfLarg_wide_uniq))])
-      
-      
-      # jointure des tables
-      Extr_Larg <- merge(Extr_Larg, SurfLarg_wide_uniq,all=T)
-      
+      SurfLarg <- rbind(SurfLarg,SurfLarg.tmp[,c("id","Nature","Aire_intersect")])
       
       # actualisation de la progression
       pb_l$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # gestion de l'extractions des longueurs de Surfs intersectees
+    SurfLarg <- rbind(SurfLarg,Rebus)
+    
+    # calcul de la proportion des surfaces
+    Aire_tot <- BuffLarg^2*pi
+    SurfLarg$Aire_intersect <- SurfLarg$Aire_intersect / Aire_tot
+    
+    
+    # conversion long -> wide
+    SurfLarg.dt <- data.table::data.table(SurfLarg)
+    SurfLarg_wide <- data.table::dcast(SurfLarg.dt,id + Aire_intersect ~ Nature, value.var = "Aire_intersect", fill = 0,fun.aggregate = sum) # conversion long -> wide
+    
+    
+    # somme des longueurs de Surfs intersectes par id selon le type
+    Extr_Larg <-  SurfLarg_wide %>%
+      group_by(id) %>%
+      mutate(SpCESl_1 = if(length(grep("Eau salée permanente",colnames(.))) > 0){sum(`Eau salée permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESl_2 = if(length(grep("Eau douce permanente",colnames(.))) > 0){sum(`Eau douce permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESl_3 = if(length(grep("Eau salée non permanente",colnames(.))) > 0){sum(`Eau salée non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESl_4 = if(length(grep("Eau douce non permanente",colnames(.))) > 0){sum(`Eau douce non permanente`)}else{sum(`NA`)}) %>%
+      mutate(SpCESl_5 = if(length(grep("Névé, glacier",colnames(.))) > 0){sum(`Névé, glacier`)}else{sum(`NA`)})
+    
+    
+    Extr_Larg <- unique(Extr_Larg[,grep("id|SpCES",colnames(Extr_Larg))])
   
   
   
@@ -511,13 +528,14 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     SpSURF <- left_join(Extr_Smal,Extr_Med, by="id")
     SpSURF <- left_join(SpSURF,Extr_Larg, by="id")
     
-    SpSURF <- dplyr::left_join(SpSURF, Point[,c("id","X_barycentre_L93","Y_barycentre_L93","ID_liste")],by="id") # add d'informations sur les listes
+    SpSURF <- dplyr::left_join(SpSURF, Point[,c("id",Coords,"ID_liste")],by="id") # add d'informations sur les listes
     
     
+    save(SpSURF, file = "C:/git/ODF/output/function_output/Rimage_EauSURFACES_envEPOC.RData") # securite
     write.csv(SpSURF, file = "C:/git/ODF/output/function_output/EauSURFACES_envEPOC.csv", row.names = F)
     
     
-    cat("\n\n\t-------\tExtract TRONCONS done - check /function_output \t-------\n\n")
+    cat("\n\n\t-------\tExtract SURFACES d'eau done - check /function_output \t-------\n\n")
   
   
   
