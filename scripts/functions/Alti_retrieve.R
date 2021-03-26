@@ -123,6 +123,7 @@ extract_Alti = function(dsnTable, names_coord, buffer_medium, buffer_large)
     SpAlti_all <- dplyr::left_join(SpAlti_all, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
     
     
+    save(SpAlti_all, file = "C:/git/ODF/output/function_output/Rimage_ALTI_envEPOC.RData") # securite
     write.csv(SpAlti_all, file = "C:/git/ODF/output/function_output/ALTI_envEPOC.csv", row.names = F)
     
     
