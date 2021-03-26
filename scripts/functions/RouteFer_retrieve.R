@@ -15,7 +15,7 @@
 ##  
 ##    curl_download(url,destfile = "C://Users/Travail/Desktop/TEST.7z") # fichier en .7z
 
-## dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
+## dsnTable = "C:/git/test_epoc1500.csv"
 ## names_coord = c("X_barycentre_L93","Y_barycentre_L93")
 ## buffer_small = 50
 ## buffer_medium = 500
@@ -79,13 +79,17 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
   # Buffer locaux : small -----
   
     cat(paste0(c("\n\n\t---\tROUTE dans un buffer de :",BuffSmal," m","\t---\n")))
+  
+    vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
     RouteSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(RouteSmal) <- c("id")
     class(RouteSmal$VOCATION) <- class(ROUTE$VOCATION)
     
+    Rebus <- data.table::data.table()
+    
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
+    pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
                                        format = "Extraction longueur des routes buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -93,40 +97,45 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffSmal)){ 
+    
+    for(i in vec.iteration_smal){
+      Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
       
-      Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      RouteSmal.tmp <- st_intersection(ROUTE, Point.tmp) # intersection en block
       
-      RouteSmal.tmp <- st_intersection(ROUTE, Point.tmp)
-      
-      if(nrow(RouteSmal.tmp) > 0){
-        RouteSmal.tmp$Longueur_intersect <- as.numeric(st_length(RouteSmal.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        RouteSmal.tmp[1,"id"] <- Point.tmp$id
-        RouteSmal.tmp$Longueur_intersect <- 0
-        RouteSmal.tmp$VOCATION <- NA
+        if(nrow(RouteSmal.tmp[RouteSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          RouteSmal.tmp[RouteSmal.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(RouteSmal.tmp[RouteSmal.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, VOCATION = NA)))
+        }
         
       }
       
-      
-      # jointure des longueurs de routes intersecte
+      # jointure des tables de la condition presence de routes
       RouteSmal.tmp <- st_drop_geometry(RouteSmal.tmp)
       
       RouteSmal <- rbind(RouteSmal,RouteSmal.tmp[,c("id","VOCATION","Longueur_intersect")])
-  
+      
       # actualisation de la progression
       pb_s$tick()
       Sys.sleep(1 / 100)
-      
     }
+
     
-    # gestion de l'extract
+    # gestion de l'extract en parallele
     j <- data.table::data.table(RouteSmal)
-    RouteSmal_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    RouteSmal_wide$`NA` <- 0
+    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    j_wide$`NA` <- 0
     
+    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+
+    RouteSmal_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
+    RouteSmal_wide <- data.table::setnafill(RouteSmal_wide, fill = 0)
+        
     
     #somme des extracts par id selon le type de routes
     Extr_Smal <-  RouteSmal_wide %>%
@@ -136,9 +145,10 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       mutate(SpRoLPs = if(length(grep("principale",colnames(.))) > 0){sum(`Liaison principale`)}else{sum(`NA`)}) %>%
       mutate(SpRoBs = if(length(grep("Bretelle",colnames(.))) > 0){sum(`Bretelle`)}else{sum(`NA`)}) %>%
       mutate(SpRoTAPs = if(length(grep("autoroutier",colnames(.))) > 0){sum(`Type autoroutier`)}else{sum(`NA`)})
-  
-      
+    
+    
     Extr_Smal <- unique(Extr_Smal[,grep("id|SpRo",colnames(Extr_Smal))])
+    
   
     
   ##############################
@@ -146,12 +156,16 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     cat(paste0(c("\t---\tROUTE dans un buffer de :",BuffMed," m","\t---\n")))
     
+    vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
     RouteMed <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(RouteMed) <- c("id")
     class(RouteMed$VOCATION) <- class(ROUTE$VOCATION)
     
+    Rebus <- data.table::data.table()
+    
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
+    pb_m <- progress::progress_bar$new(total = length(vec.iteration_med),
                                        format = "Extraction longueur des routes buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -159,25 +173,24 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffMed)){ 
+    for(i in vec.iteration_med){
+      Point.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),]
       
-      Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      RouteMed.tmp <- st_intersection(ROUTE, Point.tmp) # intersection en block
       
-      RouteMed.tmp <- st_intersection(ROUTE, Point.tmp)
-      
-      if(nrow(RouteMed.tmp) > 0){
-        RouteMed.tmp$Longueur_intersect <- as.numeric(st_length(RouteMed.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        RouteMed.tmp[1,"id"] <- Point.tmp$id
-        RouteMed.tmp$Longueur_intersect <- 0
-        RouteMed.tmp$VOCATION <- NA
+        if(nrow(RouteMed.tmp[RouteMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          RouteMed.tmp[RouteMed.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(RouteMed.tmp[RouteMed.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, VOCATION = NA)))
+        }
         
       }
       
-      
-      # jointure des longueurs de routes intersecte
+      # jointure des tables de la condition presence de routes
       RouteMed.tmp <- st_drop_geometry(RouteMed.tmp)
       
       RouteMed <- rbind(RouteMed,RouteMed.tmp[,c("id","VOCATION","Longueur_intersect")])
@@ -185,13 +198,17 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       # actualisation de la progression
       pb_m$tick()
       Sys.sleep(1 / 100)
-      
     }
     
-    # gestion de l'extract
+    # gestion de l'extract en parallele
     j <- data.table::data.table(RouteMed)
-    RouteMed_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    RouteMed_wide$`NA` <- 0
+    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    j_wide$`NA` <- 0
+    
+    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    
+    RouteMed_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
+    RouteMed_wide <- data.table::setnafill(RouteMed_wide, fill = 0)
     
     
     #somme des extracts par id selon le type de routes
@@ -212,11 +229,16 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     cat(paste0(c("\t---\tROUTE dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    Extr_Larg <- as.data.frame(matrix(nrow=0,ncol = 1))
-    colnames(Extr_Larg) <- c("id")
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    
+    RouteLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
+    colnames(RouteLarg) <- c("id")
+    class(RouteLarg$VOCATION) <- class(ROUTE$VOCATION)
+    
+    Rebus <- data.table::data.table()
     
     # initialisation de la barre de progression
-    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
+    pb_l <- progress::progress_bar$new(total = length(vec.iteration_larg),
                                        format = "Extraction longueur des routes buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
@@ -224,54 +246,60 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffLarg)){
+    
+    for(i in vec.iteration_larg){
+      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
       
-      Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      RouteLarg.tmp <- st_intersection(ROUTE, Point.tmp) # intersection en block
       
-      RouteLarg.tmp <- st_intersection(ROUTE, Point.tmp)
-      
-      if(nrow(RouteLarg.tmp) > 0){
-        RouteLarg.tmp$Longueur_intersect <- as.numeric(st_length(RouteLarg.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        RouteLarg.tmp[1,"id"] <- Point.tmp$id
-        RouteLarg.tmp$Longueur_intersect <- 0
-        RouteLarg.tmp$VOCATION <- NA
+        if(nrow(RouteLarg.tmp[RouteLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          RouteLarg.tmp[RouteLarg.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(RouteLarg.tmp[RouteLarg.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de route --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, VOCATION = NA)))
+        }
         
       }
       
+      # jointure des tables de la condition presence de routes
+      RouteLarg.tmp <- st_drop_geometry(RouteLarg.tmp)
       
-      # gestion de l'extractions des longueurs de routes intersectees
-      RouteLarg.tmp <- st_drop_geometry(RouteLarg.tmp[,c("id","VOCATION","Longueur_intersect")])
-      
-      # conversion long -> wide
-      RouteLarg.tmp.dt <- data.table::data.table(RouteLarg.tmp)
-      RouteLarg_wide <- data.table::dcast(RouteLarg.tmp.dt,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-      RouteLarg_wide$`NA` <- 0 # rajout d'une colonne pour condition nulle
-      
-      
-      # somme des longueurs de routes intersectes par id selon le type
-      RouteLarg_wide_uniq <-  RouteLarg_wide %>%
-        group_by(id) %>%
-        mutate(SpRoLLl = if(length(grep("locale",colnames(.))) > 0){sum(`Liaison locale`)}else{sum(`NA`)}) %>%
-        mutate(SpRoLRl = if(length(grep("régionale",colnames(.))) > 0){sum(`Liaison régionale`)}else{sum(`NA`)}) %>%
-        mutate(SpRoLPl = if(length(grep("principale",colnames(.))) > 0){sum(`Liaison principale`)}else{sum(`NA`)}) %>%
-        mutate(SpRoBl = if(length(grep("Bretelle",colnames(.))) > 0){sum(`Bretelle`)}else{sum(`NA`)}) %>%
-        mutate(SpRoTAPl = if(length(grep("autoroutier",colnames(.))) > 0){sum(`Type autoroutier`)}else{sum(`NA`)})
-      
-      RouteLarg_wide_uniq <- unique(RouteLarg_wide_uniq[,grep("id|SpRo",colnames(RouteLarg_wide_uniq))])
-
-      
-      # jointure des tables
-      Extr_Larg <- merge(Extr_Larg, RouteLarg_wide_uniq,all=T)
-      
+      RouteLarg <- rbind(RouteLarg,RouteLarg.tmp[,c("id","VOCATION","Longueur_intersect")])
       
       # actualisation de la progression
       pb_l$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    
+      
+    # gestion de l'extract en parallele
+    j <- data.table::data.table(RouteLarg)
+    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    j_wide$`NA` <- 0
+    
+    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    
+    RouteLarg_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
+    RouteLarg_wide <- data.table::setnafill(RouteLarg_wide, fill = 0)
+    
+    
+    #somme des extracts par id selon le type de routes
+    Extr_Larg <-  RouteLarg_wide %>%
+      group_by(id) %>%
+      mutate(SpRoLLl = if(length(grep("locale",colnames(.))) > 0){sum(`Liaison locale`)}else{sum(`NA`)}) %>%
+      mutate(SpRoLRl = if(length(grep("régionale",colnames(.))) > 0){sum(`Liaison régionale`)}else{sum(`NA`)}) %>%
+      mutate(SpRoLPl = if(length(grep("principale",colnames(.))) > 0){sum(`Liaison principale`)}else{sum(`NA`)}) %>%
+      mutate(SpRoBl = if(length(grep("Bretelle",colnames(.))) > 0){sum(`Bretelle`)}else{sum(`NA`)}) %>%
+      mutate(SpRoTAPl = if(length(grep("autoroutier",colnames(.))) > 0){sum(`Type autoroutier`)}else{sum(`NA`)})
+    
+    
+    Extr_Larg <- unique(Extr_Larg[,grep("id|SpRo",colnames(Extr_Larg))])
+      
+    
     
   # Jointure des tables d'extractions des differents buffers
     SpROUTE <- left_join(Extr_Smal,Extr_Med, by="id")
@@ -280,6 +308,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     SpROUTE <- dplyr::left_join(SpROUTE, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
     
     
+    save(SpROUTE, file = "C:/git/ODF/output/function_output/Rimage_ROUTE_envEPOC.RData") # securite
     write.csv(SpROUTE, file = "C:/git/ODF/output/function_output/ROUTE_envEPOC.csv", row.names = F)
     
     
@@ -294,40 +323,44 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     #############################
     # Buffer locaux : small -----
     
-    cat(paste0(c("\t---\tVOIES FERREES dans un buffer de :",BuffSmal," m","\t---\n")))
+    cat(paste0(c("\n\n\t---\tFER dans un buffer de :",BuffSmal," m","\t---\n")))
+    
+    vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
     FerSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(FerSmal) <- c("id")
     class(FerSmal$NATURE) <- class(FER$NATURE)
     
+    Rebus <- data.table::data.table()
+    
     # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = nrow(PointBuffSmal),
-                                       format = "Extraction longueur des routes buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
+    pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
+                                       format = "Extraction longueur des voies ferrees buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
     
     pb_s$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffSmal)){
+    
+    for(i in vec.iteration_smal){
+      Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
       
-      Point.tmp <- PointBuffSmal[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      FerSmal.tmp <- st_intersection(FER, Point.tmp) # intersection en block
       
-      FerSmal.tmp <- st_intersection(FER, Point.tmp)
-      
-      if(nrow(FerSmal.tmp) > 0){
-        FerSmal.tmp$Longueur_intersect <- as.numeric(st_length(FerSmal.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        FerSmal.tmp[1,"id"] <- Point.tmp$id
-        FerSmal.tmp$Longueur_intersect <- 0
-        FerSmal.tmp$NATURE <- NA
+        if(nrow(FerSmal.tmp[FerSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          FerSmal.tmp[FerSmal.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(FerSmal.tmp[FerSmal.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de Fer --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, NATURE = NA)))
+        }
         
       }
       
-      
-      # jointure des longueurs de routes intersecte
+      # jointure des tables de la condition presence de routes
       FerSmal.tmp <- st_drop_geometry(FerSmal.tmp)
       
       FerSmal <- rbind(FerSmal,FerSmal.tmp[,c("id","NATURE","Longueur_intersect")])
@@ -335,8 +368,10 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       # actualisation de la progression
       pb_s$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # ajout des donnes rebus (0 lignes de fers intersecte)
+    FerSmal <- rbind(FerSmal,Rebus)
     
     
     #somme des extracts par id
@@ -351,40 +386,44 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     #############################
     # Buffer locaux : medium -----
     
-    cat(paste0(c("\t---\tVOIES FERREES dans un buffer de :",BuffMed," m","\t---\n")))
+    cat(paste0(c("\n\n\t---\tFER dans un buffer de :",BuffMed," m","\t---\n")))
+    
+    vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
     FerMed <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(FerMed) <- c("id")
     class(FerMed$NATURE) <- class(FER$NATURE)
     
+    Rebus <- data.table::data.table()
+    
     # initialisation de la barre de progression
-    pb_m <- progress::progress_bar$new(total = nrow(PointBuffMed),
-                                       format = "Extraction longueur des routes buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
+    pb_m <- progress::progress_bar$new(total = length(vec.iteration_med),
+                                       format = "Extraction longueur des voies ferrees buffer medium [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
     
     pb_m$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffMed)){
+    
+    for(i in vec.iteration_med){
+      Point.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),]
       
-      Point.tmp <- PointBuffMed[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      FerMed.tmp <- st_intersection(FER, Point.tmp) # intersection en block
       
-      FerMed.tmp <- st_intersection(FER, Point.tmp)
-      
-      if(nrow(FerMed.tmp) > 0){
-        FerMed.tmp$Longueur_intersect <- as.numeric(st_length(FerMed.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        FerMed.tmp[1,"id"] <- Point.tmp$id
-        FerMed.tmp$Longueur_intersect <- 0
-        FerMed.tmp$NATURE <- NA
+        if(nrow(FerMed.tmp[FerMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          FerMed.tmp[FerMed.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(FerMed.tmp[FerMed.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de Fer --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, NATURE = NA)))
+        }
         
       }
       
-      
-      # jointure des longueurs de routes intersecte
+      # jointure des tables de la condition presence de routes
       FerMed.tmp <- st_drop_geometry(FerMed.tmp)
       
       FerMed <- rbind(FerMed,FerMed.tmp[,c("id","NATURE","Longueur_intersect")])
@@ -392,8 +431,10 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       # actualisation de la progression
       pb_m$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # ajout des donnes rebus (0 lignes de fers intersecte)
+    FerMed <- rbind(FerMed,Rebus)
     
     
     #somme des extracts par id
@@ -408,40 +449,44 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     #############################
     # Buffer locaux : large -----
     
-    cat(paste0(c("\t---\tVOIES FERREES dans un buffer de :",BuffLarg," m","\t---\n")))
+    cat(paste0(c("\n\n\t---\tFER dans un buffer de :",BuffLarg," m","\t---\n")))
+    
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
     FerLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(FerLarg) <- c("id")
     class(FerLarg$NATURE) <- class(FER$NATURE)
     
+    Rebus <- data.table::data.table()
+    
     # initialisation de la barre de progression
-    pb_l <- progress::progress_bar$new(total = nrow(PointBuffLarg),
-                                       format = "Extraction longueur des routes buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
+    pb_l <- progress::progress_bar$new(total = length(vec.iteration_larg),
+                                       format = "Extraction longueur des voies ferrees buffer large [:bar] :percent    Tps ecoule = :elapsedfull",
                                        clear = F)
     
     
     pb_l$tick(0)
     Sys.sleep(1/20)
     
-    for(i in 1:nrow(PointBuffLarg)){
+    
+    for(i in vec.iteration_larg){
+      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
       
-      Point.tmp <- PointBuffLarg[i,c("ID_liste","id","Maille","Jour_de_l_annee")]
+      FerLarg.tmp <- st_intersection(FER, Point.tmp) # intersection en block
       
-      FerLarg.tmp <- st_intersection(FER, Point.tmp)
-      
-      if(nrow(FerLarg.tmp) > 0){
-        FerLarg.tmp$Longueur_intersect <- as.numeric(st_length(FerLarg.tmp))
+      for(h in Point.tmp$id){ # boucle afin d'appliquer la condition de verification (presence ou absence de Routes ?)
         
-      }else{ # en cas d'absence de route --> recuperation des infos  
-        
-        FerLarg.tmp[1,"id"] <- Point.tmp$id
-        FerLarg.tmp$Longueur_intersect <- 0
-        FerLarg.tmp$NATURE <- NA
+        if(nrow(FerLarg.tmp[FerLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
+          FerLarg.tmp[FerLarg.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(FerLarg.tmp[FerLarg.tmp$id == h,]))
+          
+        }else{ # en cas d'absence de Fer --> formation table de donnees nulles
+          
+          Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, NATURE = NA)))
+        }
         
       }
       
-      
-      # jointure des longueurs de routes intersecte
+      # jointure des tables de la condition presence de routes
       FerLarg.tmp <- st_drop_geometry(FerLarg.tmp)
       
       FerLarg <- rbind(FerLarg,FerLarg.tmp[,c("id","NATURE","Longueur_intersect")])
@@ -449,8 +494,10 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       # actualisation de la progression
       pb_l$tick()
       Sys.sleep(1 / 100)
-      
     }
+    
+    # ajout des donnes rebus (0 lignes de fers intersecte)
+    FerLarg <- rbind(FerLarg,Rebus)
     
     
     #somme des extracts par id
@@ -468,6 +515,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     SpFER <- dplyr::left_join(SpFER, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
     
     
+    save(SpFER, file = "C:/git/ODF/output/function_output/Rimage_FER_envEPOC.RData") # securite
     write.csv(SpFER, file = "C:/git/ODF/output/function_output/FER_envEPOC.csv", row.names = F)
     
     
