@@ -238,6 +238,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     CLC_hab_BMBL <- dplyr::left_join(CLC_hab_BMBL, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
     
   # sauvegarde sur disque
+    save(CLC_hab_BMBL, file = "C:/git/ODF/output/function_output/Rimage_CLC_envEPOC.RData") # securite
     write.csv(CLC_hab_BMBL, file = "C:/git/ODF/output/function_output/CLC_envEPOC.csv", row.names = F)
   
   cat("\n\n\t-------\tExtract CLC done - check /function_output \t-------\n\n")
