@@ -55,14 +55,6 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     PointBuffLarg <- st_buffer(Point_sf, dist = BuffLarg)
   
     
-    # Si coords en wgs84
-    ## Point_L93=spTransform(Point,proj4string(OSO))
-    ##
-    ##  # Retrait des points en dehors du raster
-    ##    PointL_L93=spTransform(PointL,proj4string(Hab))
-    ##    PointL_L93=crop(PointL_L93,Hab)
-    ##    PointL=subset(PointL,PointL$id %in% PointL_L93$id)
-    
     cat("\t----\tFin du chargement des donnees\t----\n")
   
   # EXTRACTION ----
@@ -123,8 +115,8 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       # correction des NAs (= habitats absent lors de l'extract du point)
       OSO_hab_wide_BM[is.na(OSO_hab_wide_BM)] <- 0
       
-      OSO_hab_wide_BM <- OSO_hab_wide_BM %>%
-        dplyr::select(-contains("^0$"))  # retrait des habitats 0 ==> zone non couverte par le raster
+      # retrait des habitats 0 ==> zone non couverte par le raster [condition : detection de la colonne "0" du dtf]
+      OSO_hab_wide_BM <- OSO_hab_wide_BM[,if(length(grep("^0$",names(OSO_hab_wide_BM)) > 0)){ -grep("^0$",names(OSO_hab_wide_BM))}else{names(OSO_hab_wide_BM)}]
       
       
       # calcul des proportions d'habitats 
@@ -141,6 +133,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       
       colnames(OSO_hab_wide_BM) <- gsub("([0-9]{1,})","SpOSOs_\\1",colnames(OSO_hab_wide_BM))    
     
+      
   
     # Buffer large -------
       cat(paste("\n\t----\tDebut extraction des donnees OSO selon le buffer :",BuffLarg,"m\t----\n"))
@@ -163,7 +156,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       # boucle ----
       for(i in vec.iteration_larg){
         
-        PointBuffLarg.tmp <- PointBuffLarg[i:min((i+4*199),length(PointBuffLarg$ID_extract)),] # si add condition --> condition - 1
+        PointBuffLarg.tmp <- PointBuffLarg[i:min((i+199),length(PointBuffLarg$ID_extract)),] # si add condition --> condition - 1
         
         
         OSO_hab.tmp <- raster::extract(x = OSO, 
@@ -196,8 +189,8 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       # correction des NAs (= habitats absent lors de l'extract du point)
       OSO_hab_wide_BL[is.na(OSO_hab_wide_BL)] <- 0
       
-      OSO_hab_wide_BL <- OSO_hab_wide_BL %>%
-        dplyr::select(-contains("^0$"))  # retrait des habitats 0 ==> zone non couverte par le raster
+      # retrait des habitats 0 ==> zone non couverte par le raster [condition : detection de la colonne "0" du dtf]
+      OSO_hab_wide_BL <- OSO_hab_wide_BL[,if(length(grep("^0$",names(OSO_hab_wide_BL)) > 0)){ -grep("^0$",names(OSO_hab_wide_BL))}else{names(OSO_hab_wide_BL)}]
       
       
       # calcul des proportions d'habitats 
@@ -226,6 +219,10 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
   OSO_hab_BMBL <- dplyr::left_join(OSO_hab_BMBL, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
   
   # sauvegarde sur disque
+  
+  save(OSO_hab_BM, file = "C:/git/ODF/output/function_output/Rimage_OSO_BM_envEPOC.RData") # securite
+  save(OSO_hab_BL, file = "C:/git/ODF/output/function_output/Rimage_OSO_BL_envEPOC.RData") # securite
+  save(OSO_hab_BMBL, file = "C:/git/ODF/output/function_output/Rimage_OSO_envEPOC.RData") # securite
   write.csv(OSO_hab_BMBL, file = "C:/git/ODF/output/function_output/OSO_envEPOC.csv", row.names = F)
   
   
