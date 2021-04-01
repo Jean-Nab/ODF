@@ -229,7 +229,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     cat(paste0(c("\t---\tROUTE dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 150) # argument suplementaire ? / add condition : NA/all -> tous
     
     RouteLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(RouteLarg) <- c("id")
@@ -248,7 +248,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     
     for(i in vec.iteration_larg){
-      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
+      Point.tmp <- PointBuffLarg[i:min((i+149),length(PointBuffLarg$ID_extract)),]
       
       RouteLarg.tmp <- st_intersection(ROUTE, Point.tmp) # intersection en block
       
@@ -451,7 +451,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     cat(paste0(c("\n\n\t---\tFER dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 150) # argument suplementaire ? / add condition : NA/all -> tous
     
     FerLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(FerLarg) <- c("id")
@@ -470,7 +470,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     
     for(i in vec.iteration_larg){
-      Point.tmp <- PointBuffLarg[i:min((i+304),length(PointBuffLarg$ID_extract)),]
+      Point.tmp <- PointBuffLarg[i:min((i+149),length(PointBuffLarg$ID_extract)),]
       
       FerLarg.tmp <- st_intersection(FER, Point.tmp) # intersection en block
       
