@@ -116,9 +116,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      RouteSmal.tmp <- st_drop_geometry(RouteSmal.tmp)
-      
-      RouteSmal <- rbind(RouteSmal,RouteSmal.tmp[,c("id","VOCATION","Longueur_intersect")])
+      RouteSmal <- rbind(RouteSmal,st_drop_geometry(RouteSmal.tmp[,c("id","VOCATION","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_s$tick()
@@ -126,16 +124,14 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     }
 
     
-    # gestion de l'extract en parallele
-    j <- data.table::data.table(RouteSmal)
-    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    j_wide$`NA` <- 0
+    # gestion de l'extract
+      # jointure des tables forme pendant l'extract selon la condition if-else
+      RouteSmal <- rbind(RouteSmal,Rebus)
+      
+    RouteSmal_wide <- data.table::data.table(RouteSmal)
+    RouteSmal_wide <- data.table::dcast(RouteSmal_wide,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    RouteSmal_wide$`NA` <- 0
     
-    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-
-    RouteSmal_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
-    RouteSmal_wide <- data.table::setnafill(RouteSmal_wide, fill = 0)
-        
     
     #somme des extracts par id selon le type de routes
     Extr_Smal <-  RouteSmal_wide %>%
@@ -191,9 +187,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      RouteMed.tmp <- st_drop_geometry(RouteMed.tmp)
-      
-      RouteMed <- rbind(RouteMed,RouteMed.tmp[,c("id","VOCATION","Longueur_intersect")])
+      RouteMed <- rbind(RouteMed,st_drop_geometry(RouteMed.tmp[,c("id","VOCATION","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_m$tick()
@@ -201,14 +195,12 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     }
     
     # gestion de l'extract en parallele
-    j <- data.table::data.table(RouteMed)
-    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    j_wide$`NA` <- 0
+      # jointure des tables forme pendant l'extract selon la condition if-else
+      RouteMed <- rbind(RouteMed,Rebus)
     
-    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    
-    RouteMed_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
-    RouteMed_wide <- data.table::setnafill(RouteMed_wide, fill = 0)
+    RouteMed_wide <- data.table::data.table(RouteMed)
+    RouteMed_wide <- data.table::dcast(RouteMed_wide,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    RouteMed_wide$`NA` <- 0
     
     
     #somme des extracts par id selon le type de routes
@@ -265,9 +257,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      RouteLarg.tmp <- st_drop_geometry(RouteLarg.tmp)
-      
-      RouteLarg <- rbind(RouteLarg,RouteLarg.tmp[,c("id","VOCATION","Longueur_intersect")])
+     RouteLarg <- rbind(RouteLarg,st_drop_geometry(RouteLarg.tmp[,c("id","VOCATION","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_l$tick()
@@ -277,14 +267,12 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
       
     # gestion de l'extract en parallele
-    j <- data.table::data.table(RouteLarg)
-    j_wide <- data.table::dcast(j,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    j_wide$`NA` <- 0
+      # jointure des tables forme pendant l'extract selon la condition if-else
+    RouteLarg <- rbind(RouteLarg,Rebus)
     
-    j1_wide <- data.table::dcast(Rebus,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
-    
-    RouteLarg_wide <- merge(j_wide,j1_wide,all=T,by=c("id","Longueur_intersect","NA")) # jointure des tables formee par la condition if/else
-    RouteLarg_wide <- data.table::setnafill(RouteLarg_wide, fill = 0)
+    RouteLarg_wide <- data.table::data.table(RouteLarg)
+    RouteLarg_wide <- data.table::dcast(RouteLarg_wide,id + Longueur_intersect ~ VOCATION, value.var = "Longueur_intersect", fill = 0) # conversion long -> wide
+    RouteLarg_wide$`NA` <- 0
     
     
     #somme des extracts par id selon le type de routes
@@ -361,9 +349,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      FerSmal.tmp <- st_drop_geometry(FerSmal.tmp)
-      
-      FerSmal <- rbind(FerSmal,FerSmal.tmp[,c("id","NATURE","Longueur_intersect")])
+      FerSmal <- rbind(FerSmal,st_drop_geometry(FerSmal.tmp[,c("id","NATURE","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_s$tick()
@@ -426,7 +412,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       # jointure des tables de la condition presence de routes
       FerMed.tmp <- st_drop_geometry(FerMed.tmp)
       
-      FerMed <- rbind(FerMed,FerMed.tmp[,c("id","NATURE","Longueur_intersect")])
+      FerMed <- rbind(FerMed,st_drop_geometry(FerMed.tmp[,c("id","NATURE","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_m$tick()
@@ -487,9 +473,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      FerLarg.tmp <- st_drop_geometry(FerLarg.tmp)
-      
-      FerLarg <- rbind(FerLarg,FerLarg.tmp[,c("id","NATURE","Longueur_intersect")])
+      FerLarg <- rbind(FerLarg,st_drop_geometry(FerLarg.tmp[,c("id","NATURE","Longueur_intersect")]))
       
       # actualisation de la progression
       pb_l$tick()
