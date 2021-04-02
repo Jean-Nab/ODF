@@ -96,15 +96,15 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
       if(nrow(TroncSmal.tmp[TroncSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
         TroncSmal.tmp[TroncSmal.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncSmal.tmp[TroncSmal.tmp$id == h,]))
         
-        # jointure des tables de la condition presence de routes
-        TroncSmal <- rbind(TroncSmal,st_drop_geometry(TroncSmal.tmp[,c("id","Etat","Longueur_intersect")]))
-        
       }else{ # en cas d'absence de route --> formation table de donnees nulles
         
         Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
       }
       
     }
+    
+    # jointure des tables de la condition presence de routes
+    TroncSmal <- rbind(TroncSmal,st_drop_geometry(TroncSmal.tmp[,c("id","Etat","Longueur_intersect")]))
     
     # actualisation de la progression
     pb_s$tick()
@@ -166,15 +166,15 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
       if(nrow(TroncMed.tmp[TroncMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
         TroncMed.tmp[TroncMed.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncMed.tmp[TroncMed.tmp$id == h,]))
         
-        # jointure des tables de la condition presence de routes
-        TroncMed <- rbind(TroncMed,st_drop_geometry(TroncMed.tmp[,c("id","Etat","Longueur_intersect")]))
-        
       }else{ # en cas d'absence de route --> formation table de donnees nulles
         
         Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
       }
       
     }
+    
+    # jointure des tables de la condition presence de routes
+    TroncMed <- rbind(TroncMed,st_drop_geometry(TroncMed.tmp[,c("id","Etat","Longueur_intersect")]))
     
     # actualisation de la progression
     pb_m$tick()
@@ -236,15 +236,15 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
       if(nrow(TroncLarg.tmp[TroncLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
         TroncLarg.tmp[TroncLarg.tmp$id == h,"Longueur_intersect"] <- as.numeric(st_length(TroncLarg.tmp[TroncLarg.tmp$id == h,]))
         
-        # jointure des tables de la condition presence de routes
-        TroncLarg <- rbind(TroncLarg,st_drop_geometry(TroncLarg.tmp[,c("id","Etat","Longueur_intersect")]))
-        
       }else{ # en cas d'absence de route --> formation table de donnees nulles
         
         Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Longueur_intersect = 0, Etat = NA)))
       }
       
     }
+    
+    # jointure des tables de la condition presence de routes
+    TroncLarg <- rbind(TroncLarg,st_drop_geometry(TroncLarg.tmp[,c("id","Etat","Longueur_intersect")]))
 
     # actualisation de la progression
     pb_l$tick()
@@ -325,9 +325,6 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
         if(nrow(SurfSmal.tmp[SurfSmal.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
           SurfSmal.tmp[SurfSmal.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfSmal.tmp[SurfSmal.tmp$id == h,]))
           
-          # jointure des tables de la condition presence de routes
-          SurfSmal <- rbind(SurfSmal,st_drop_geometry(SurfSmal.tmp[,c("id","Nature","Aire_intersect")]))
-          
         }else{ # en cas d'absence de route --> formation table de donnees nulles
           
           Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Aire_intersect = 0, Nature = NA)))
@@ -335,6 +332,8 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
         
       }
       
+      # jointure des tables de la condition presence de routes
+      SurfSmal <- rbind(SurfSmal,st_drop_geometry(SurfSmal.tmp[,c("id","Nature","Aire_intersect")]))
       
       # actualisation de la progression
       pb_s$tick()
@@ -399,15 +398,14 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
         if(nrow(SurfMed.tmp[SurfMed.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
           SurfMed.tmp[SurfMed.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfMed.tmp[SurfMed.tmp$id == h,]))
           
-          # jointure des tables de la condition presence de routes
-          SurfMed <- rbind(SurfMed,st_drop_geometry(SurfMed.tmp[,c("id","Nature","Aire_intersect")]))
-          
         }else{ # en cas d'absence de route --> formation table de donnees nulles
           
           Rebus <- data.table::rbindlist(list(Rebus,data.table::data.table(id = h, Aire_intersect = 0, Nature = NA)))
         }
         
       }
+      # jointure des tables de la condition presence de routes
+      SurfMed <- rbind(SurfMed,st_drop_geometry(SurfMed.tmp[,c("id","Nature","Aire_intersect")]))
     
       # actualisation de la progression
       pb_m$tick()
@@ -446,7 +444,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     cat(paste0(c("\t---\tSurfaces d'eau dans un buffer de :",BuffLarg," m","\t---\n")))
     
-    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 150) # argument suplementaire ? / add condition : NA/all -> tous
+    vec.iteration_larg <- seq(from = 1, to = length(PointBuffLarg$ID_extract), by = 205) # argument suplementaire ? / add condition : NA/all -> tous
     
     SurfLarg <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(SurfLarg) <- c("id")
@@ -464,7 +462,7 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
     
     
     for(i in vec.iteration_larg){
-      Point.tmp <- PointBuffLarg[i:min((i+149),length(PointBuffLarg$ID_extract)),]
+      Point.tmp <- PointBuffLarg[i:min((i+204),length(PointBuffLarg$ID_extract)),]
       
       SurfLarg.tmp <- st_intersection(SURF, Point.tmp) # intersection en block
       
@@ -473,8 +471,6 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
         if(nrow(SurfLarg.tmp[SurfLarg.tmp$id == h,]) > 0){ # Si presence --> calcul longueur
           SurfLarg.tmp[SurfLarg.tmp$id == h,"Aire_intersect"] <- as.numeric(st_area(SurfLarg.tmp[SurfLarg.tmp$id == h,]))
           
-          # jointure des tables de la condition presence de routes
-              SurfLarg <- rbind(SurfLarg,st_drop_geometry(SurfLarg.tmp[,c("id","Nature","Aire_intersect")]))
           
         }else{ # en cas d'absence de route --> formation table de donnees nulles
           
@@ -482,6 +478,9 @@ extract_eau = function(dsnTable, names_coord,buffer_small, buffer_medium, buffer
         }
         
       }
+      
+      # jointure des tables de la condition presence de routes
+      SurfLarg <- rbind(SurfLarg,st_drop_geometry(SurfLarg.tmp[,c("id","Nature","Aire_intersect")]))
     
       # actualisation de la progression
       pb_l$tick()
