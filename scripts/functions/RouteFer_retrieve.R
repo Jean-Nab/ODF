@@ -313,26 +313,16 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
     
     cat(paste0(c("\n\n\t---\tFER dans un buffer de :",BuffSmal," m","\t---\n")))
     
-    vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
     
     FerSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
     colnames(FerSmal) <- c("id")
     class(FerSmal$NATURE) <- class(FER$NATURE)
     
     Rebus <- data.table::data.table()
-    
-    # initialisation de la barre de progression
-    pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
-                                       format = "Extraction longueur des voies ferrees buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
-                                       clear = F)
-    
-    
-    pb_s$tick(0)
-    Sys.sleep(1/20)
-    
-    
-    for(i in vec.iteration_smal){
-      Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
+
+
+    # pas d'extract en batch : pb de gestion dtf <=> faible densite du reseau ferroviaire
+      Point.tmp <- PointBuffSmal[,]
       
       FerSmal.tmp <- st_intersection(FER, Point.tmp) # intersection en block
       
@@ -350,11 +340,7 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       
       # jointure des tables de la condition presence de routes
       FerSmal <- rbind(FerSmal,st_drop_geometry(FerSmal.tmp[,c("id","NATURE","Longueur_intersect")]))
-      
-      # actualisation de la progression
-      pb_s$tick()
-      Sys.sleep(1 / 100)
-    }
+
     
     # ajout des donnes rebus (0 lignes de fers intersecte)
     FerSmal <- rbind(FerSmal,Rebus)
@@ -410,8 +396,6 @@ extract_route = function(dsnTable, names_coord,buffer_small, buffer_medium, buff
       }
       
       # jointure des tables de la condition presence de routes
-      FerMed.tmp <- st_drop_geometry(FerMed.tmp)
-      
       FerMed <- rbind(FerMed,st_drop_geometry(FerMed.tmp[,c("id","NATURE","Longueur_intersect")]))
       
       # actualisation de la progression
