@@ -32,7 +32,8 @@
 
 
 
-extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRaster){
+extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRaster,
+                           prefixe_fichier){
   # packages
   library(sp)
   library(sf)
@@ -100,9 +101,8 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
     SPBIO <- dplyr::left_join(SpBiom,SpBiol, by = "id")
   
       
-    save(SPBIO, file = "C:/git/ODF/output/function_output/Rimage_BIOCLIM_envEPOC.RData") # securite
-    write.csv(SPBIO, file = "C:/git/ODF/output/function_output/BIOCLIM_envEPOC.csv", row.names = F)
-    
+    save(SPBIO, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"BIOCLIM_envEPOC.RData")) # securite
+    write.csv(SPBIO, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"BIOCLIM_envEPOC.csv"), row.names = F)
     
     cat("\n\n\t-------\tExtract BIOCLIM done - check /function_output \t-------\n\n")
   
