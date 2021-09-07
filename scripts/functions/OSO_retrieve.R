@@ -18,7 +18,7 @@
 
 
 
-extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRasterOSO)
+extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRasterOSO, prefixe_fichier)
 {
     # packages
     library(sp)
@@ -220,10 +220,10 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
   
   # sauvegarde sur disque
   
-  save(OSO_hab_wide_BM, file = "C:/git/ODF/output/function_output/Rimage_OSO_BM_envEPOC.RData") # securite
-  save(OSO_hab_wide_BL, file = "C:/git/ODF/output/function_output/Rimage_OSO_BL_envEPOC.RData") # securite
-  save(OSO_hab_BMBL, file = "C:/git/ODF/output/function_output/Rimage_OSO_envEPOC.RData") # securite
-  write.csv(OSO_hab_BMBL, file = "C:/git/ODF/output/function_output/OSO_envEPOC.csv", row.names = F)
+  save(OSO_hab_wide_BM, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BM_envEPOC.RData")) # securite
+  save(OSO_hab_wide_BL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BL_envEPOC.RData")) # securite
+  save(OSO_hab_BMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.RData")) # securite
+  write.csv(OSO_hab_BMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.csv"), row.names = F)
   
   
   cat("\n\n\t-------\tExtract OSO done - check /function_output \t-------\n\n")
