@@ -46,7 +46,7 @@
 
 
 
-extract_Alti = function(dsnTable, names_coord, buffer_medium, buffer_large)
+extract_Alti = function(dsnTable, names_coord, buffer_medium, buffer_large, prefixe_fichier)
 {
   # packages
   library(sp)
@@ -123,9 +123,8 @@ extract_Alti = function(dsnTable, names_coord, buffer_medium, buffer_large)
     SpAlti_all <- dplyr::left_join(SpAlti_all, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
     
     
-    save(SpAlti_all, file = "C:/git/ODF/output/function_output/Rimage_ALTI_envEPOC.RData") # securite
-    write.csv(SpAlti_all, file = "C:/git/ODF/output/function_output/ALTI_envEPOC.csv", row.names = F)
-    
+    save(SpAlti_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"ALTI_envEPOC.RData")) # securite
+    write.csv(SpAlti_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"ALTI_envEPOC.csv"), row.names = F)
     
     cat("\n\n\t-------\tExtract ALTI done - check /function_output \t-------\n\n")
     
