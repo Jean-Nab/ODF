@@ -26,13 +26,13 @@ extract_eauTroncons = function(dsnTable, names_coord,buffer_small, buffer_medium
   library(tidyr)
   library(reshape2)
   library(progress)
-  # requiert library(data.table)
+  library(data.table)
   
   
   # recuperation des donnees
   cat("\t-------\tRecuperation des donnees geolocalisees\t-------\n")
   
-  Point <- read.csv(dsnTable)
+  Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
   Coords <- names_coord
   BuffSmal <- buffer_small
   BuffMed <- buffer_medium
