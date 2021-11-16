@@ -28,11 +28,12 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     library(tidyr)
     library(reshape2)
     library(progress)
+	library(data.table)
     
     # recup' data/raster ----
     cat("\t----\tDebut du chargement des donnees\t----\n")
     
-    Point <- read.csv(dsnTable)
+    Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
     Coords <- names_coord
     BuffMed <- buffer_medium
     BuffLarg <- buffer_large
@@ -131,7 +132,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         arrange(name) %>%
         tidyr::pivot_wider(names_from = name, values_from = value)
       
-      colnames(OSO_hab_wide_BM) <- gsub("([0-9]{1,})","SpOSOs_\\1",colnames(OSO_hab_wide_BM))    
+      colnames(OSO_hab_wide_BM) <- gsub("([0-9]{1,})","SpOSOm_\\1",colnames(OSO_hab_wide_BM))    
     
       
   
@@ -205,7 +206,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         arrange(name) %>%
         tidyr::pivot_wider(names_from = name, values_from = value)
       
-      colnames(OSO_hab_wide_BL) <- gsub("([0-9]{1,})","SpOSOm_\\1",colnames(OSO_hab_wide_BL))    
+      colnames(OSO_hab_wide_BL) <- gsub("([0-9]{1,})","SpOSOl_\\1",colnames(OSO_hab_wide_BL))    
  
   
   
