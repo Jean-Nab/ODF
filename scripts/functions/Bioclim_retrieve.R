@@ -39,6 +39,7 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
   library(sf)
   library(raster)
   library(dplyr)
+  library(data.table)
 
   
   
@@ -46,7 +47,7 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
   # recuperation des donnees
   cat("\t-------\tRecuperation des donnees geolocalisees\t-------\n")
   
-  Point <- read.csv(dsnTable)
+  Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
   Coords <- names_coord
   BuffMed <- buffer_medium
   BuffLarg <- buffer_large
@@ -99,7 +100,7 @@ extract_Bioclim = function(dsnTable, names_coord, buffer_medium, buffer_large, d
 
   # Jointure des tables ----
     SPBIO <- dplyr::left_join(SpBiom,SpBiol, by = "id")
-  
+    SPBIO <- dplyr::left_join(SPBIO, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
       
     save(SPBIO, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"BIOCLIM_envEPOC.RData")) # securite
     write.csv(SPBIO, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"BIOCLIM_envEPOC.csv"), row.names = F)
