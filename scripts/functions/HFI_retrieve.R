@@ -40,11 +40,12 @@ extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe
   library(dplyr)
   library(tidyr)
   library(reshape2)
+  library(data.table)
   
   # recuperation des donnees
   cat("\t-------\tRecuperation des donnees geolocalisees\t-------\n")
   
-  Point <- read.csv(dsnTable)
+  Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
   Coords <- names_coord
   BuffMed <- buffer_medium
   
