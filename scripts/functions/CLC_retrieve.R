@@ -29,11 +29,12 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
   library(tidyr)
   library(reshape2)
   library(progress)
+  library(data.table)
   
   # recup' data/raster ----
   cat("\t----\tDebut du chargement des donnees\t----\n")
   
-    Point <- read.csv(dsnTable)
+    Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
     Coords <- names_coord
     BuffMed <- buffer_medium
     BuffLarg <- buffer_large
