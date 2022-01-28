@@ -111,13 +111,40 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         CLC_hab.tmp <- left_join(CLC_hab.tmp,st_drop_geometry(PointBuffMed.tmp[,c("id","ID_extract")]), by = "ID_extract")
         
         CLCniv3_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv3, fun.aggregate = length, value.var = "id")
+        CLCniv3_hab_wide.tmp <- CLCniv3_hab_wide.tmp %>%
+          dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
+            w <- as.data.frame(t(apply(X = CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))],
+                       MARGIN = 1,
+                       FUN = function(X){t(X <- X/max(X)*100)})))
+            names(w) <- names(CLCniv3_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))]
+            CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))] <- w
+            
+        
         CLCniv2_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv2, fun.aggregate = length, value.var = "id")
+        CLCniv2_hab_wide.tmp <- CLCniv2_hab_wide.tmp %>%
+          dplyr::select(-contains("0")) 
+            w <- as.data.frame(t(apply(X = CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))],
+                                       MARGIN = 1,
+                                       FUN = function(X){t(X <- X/max(X)*100)})))
+            names(w) <- names(CLCniv2_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))]
+            CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))] <- w
+        
+        
         CLCniv1_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv1, fun.aggregate = length, value.var = "id")
+        CLCniv1_hab_wide.tmp <- CLCniv1_hab_wide.tmp %>%
+          dplyr::select(-contains("0")) 
+            w <- as.data.frame(t(apply(X = CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))],
+                                       MARGIN = 1,
+                                       FUN = function(X){t(X <- X/max(X)*100)})))
+            names(w) <- names(CLCniv1_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))]
+            CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))] <- w
+        
+        
         
         CLC_hab_wide_BM.tmp <- left_join(CLCniv1_hab_wide.tmp, left_join(CLCniv2_hab_wide.tmp,CLCniv3_hab_wide.tmp,by = c("ID_extract", "id")),by = c("ID_extract", "id"))
         
         CLC_hab_wide_BM <- merge(CLC_hab_wide_BM,CLC_hab_wide_BM.tmp,all=T)
-        
+        CLC_hab_wide_BM[is.na(CLC_hab_wide_BM)] <- 0 # corrections des NA a la suite du merge (habitats absent de certaine listes)
         
         # actualisation de la progression
         pb_m$tick()
@@ -126,25 +153,18 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       
       ### CLC_hab_wide_BM <- CLC_hab_wide_BM[,-grep("FALSE|TRUE|,",colnames(CLC_hab_wide_BM))] # retrait d'un artefact de merge
       
-      # correction des NAs (= habitats absent lors de l'extract du point)
-      CLC_hab_wide_BM[is.na(CLC_hab_wide_BM)] <- 0
-      
-      CLC_hab_wide_BM <- CLC_hab_wide_BM %>%
-        dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
-      
-      
-      # calcul des proportions d'habitats 
-      CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))] <- ( CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))] / 
-                                                                 rowSums(CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))])
-      ) * 100
+      ### correction des NAs (= habitats absent lors de l'extract du point)
+      ##CLC_hab_wide_BM[is.na(CLC_hab_wide_BM)] <- 0
+      ##
+      ##CLC_hab_wide_BM <- CLC_hab_wide_BM %>%
+      ##  dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
+      ##
+      ##
+      ### calcul des proportions d'habitats 
+      ##CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))] <- ( CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))] / 
+      ##                                                           rowSums(CLC_hab_wide_BM[,grep("[0-9]",colnames(CLC_hab_wide_BM))])
+      ##) * 100
     
-      # rearragement de l'ordre des colonnes
-       CLC_hab_wide_BM <- CLC_hab_wide_BM %>%
-        tidyr::pivot_longer(cols = colnames(CLC_hab_wide_BM)[grep("[0-9]{1,}",colnames(CLC_hab_wide_BM))]) %>%
-        mutate(name = as.numeric(name)) %>%
-        arrange(name) %>%
-        tidyr::pivot_wider(names_from = name, values_from = value)
-      
       colnames(CLC_hab_wide_BM) <- gsub("([0-9]{1,})","SpCLCm_\\1",colnames(CLC_hab_wide_BM))    
       
       
@@ -192,8 +212,34 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         CLC_hab.tmp <- left_join(CLC_hab.tmp,st_drop_geometry(PointBuffLarg.tmp[,c("id","ID_extract")]), by = "ID_extract")
         
         CLCniv3_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv3, fun.aggregate = length, value.var = "id")
+        CLCniv3_hab_wide.tmp <- CLCniv3_hab_wide.tmp %>%
+          dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
+        w <- as.data.frame(t(apply(X = CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))],
+                                   MARGIN = 1,
+                                   FUN = function(X){t(X <- X/max(X)*100)})))
+        names(w) <- names(CLCniv3_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))]
+        CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))] <- w
+        
+        
         CLCniv2_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv2, fun.aggregate = length, value.var = "id")
+        CLCniv2_hab_wide.tmp <- CLCniv2_hab_wide.tmp %>%
+          dplyr::select(-contains("0")) 
+        w <- as.data.frame(t(apply(X = CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))],
+                                   MARGIN = 1,
+                                   FUN = function(X){t(X <- X/max(X)*100)})))
+        names(w) <- names(CLCniv2_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))]
+        CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))] <- w
+        
+        
         CLCniv1_hab_wide.tmp <- CLC_hab.tmp %>% reshape2::dcast(ID_extract + id ~ CLCniv1, fun.aggregate = length, value.var = "id")
+        CLCniv1_hab_wide.tmp <- CLCniv1_hab_wide.tmp %>%
+          dplyr::select(-contains("0")) 
+        w <- as.data.frame(t(apply(X = CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))],
+                                   MARGIN = 1,
+                                   FUN = function(X){t(X <- X/max(X)*100)})))
+        names(w) <- names(CLCniv1_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))]
+        CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))] <- w
+        
         
         CLC_hab_wide_BL.tmp <- left_join(CLCniv1_hab_wide.tmp, left_join(CLCniv2_hab_wide.tmp,CLCniv3_hab_wide.tmp,by = c("ID_extract", "id")),by = c("ID_extract", "id"))
         
@@ -207,26 +253,18 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
       }
       
       
-      # correction des NAs (= habitats absent lors de l'extract du point)
-      CLC_hab_wide_BL[is.na(CLC_hab_wide_BL)] <- 0
-      
-      CLC_hab_wide_BL <- CLC_hab_wide_BL %>%
-        dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
-      
-      
-      # calcul des proportions d'habitats 
-      CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))] <- ( CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))] / 
-                                                                       rowSums(CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))])
-      ) * 100
-      
-      
-      # rearragement de l'ordre des colonnes
-      
-      CLC_hab_wide_BL <- CLC_hab_wide_BL %>%
-        tidyr::pivot_longer(cols = colnames(CLC_hab_wide_BL)[grep("[0-9]{1,}",colnames(CLC_hab_wide_BL))], names_to = "name") %>%
-        mutate(name = as.numeric(name)) %>%
-        arrange(name) %>%
-        tidyr::pivot_wider(names_from = name, values_from = value)
+      ### correction des NAs (= habitats absent lors de l'extract du point)
+      ##CLC_hab_wide_BL[is.na(CLC_hab_wide_BL)] <- 0
+      ##
+      ##CLC_hab_wide_BL <- CLC_hab_wide_BL %>%
+      ##  dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
+      ##
+      ##
+      ### calcul des proportions d'habitats 
+      ##CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))] <- ( CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))] / 
+      ##                                                                 rowSums(CLC_hab_wide_BL[,grep("[0-9]",colnames(CLC_hab_wide_BL))])
+      ##) * 100
+
       
       colnames(CLC_hab_wide_BL) <- gsub("([0-9]{1,})","SpCLCl_\\1",colnames(CLC_hab_wide_BL))  
     
