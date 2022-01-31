@@ -115,7 +115,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
             w <- as.data.frame(t(apply(X = CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))],
                        MARGIN = 1,
-                       FUN = function(X){t(X <- X/max(X)*100)})))
+                       FUN = function(X){t(X <- X/sum(X)*100)})))
             names(w) <- names(CLCniv3_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))]
             CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))] <- w
             
@@ -125,7 +125,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0")) 
             w <- as.data.frame(t(apply(X = CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))],
                                        MARGIN = 1,
-                                       FUN = function(X){t(X <- X/max(X)*100)})))
+                                       FUN = function(X){t(X <- X/sum(X)*100)})))
             names(w) <- names(CLCniv2_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))]
             CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))] <- w
         
@@ -135,7 +135,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0")) 
             w <- as.data.frame(t(apply(X = CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))],
                                        MARGIN = 1,
-                                       FUN = function(X){t(X <- X/max(X)*100)})))
+                                       FUN = function(X){t(X <- X/sum(X)*100)})))
             names(w) <- names(CLCniv1_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))]
             CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))] <- w
         
@@ -216,7 +216,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0"))  # retrait des habitats 0 ==> zone non couverte par le raster
         w <- as.data.frame(t(apply(X = CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))],
                                    MARGIN = 1,
-                                   FUN = function(X){t(X <- X/max(X)*100)})))
+                                   FUN = function(X){t(X <- X/sum(X)*100)})))
         names(w) <- names(CLCniv3_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))]
         CLCniv3_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv3_hab_wide.tmp))] <- w
         
@@ -226,7 +226,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0")) 
         w <- as.data.frame(t(apply(X = CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))],
                                    MARGIN = 1,
-                                   FUN = function(X){t(X <- X/max(X)*100)})))
+                                   FUN = function(X){t(X <- X/sum(X)*100)})))
         names(w) <- names(CLCniv2_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))]
         CLCniv2_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv2_hab_wide.tmp))] <- w
         
@@ -236,7 +236,7 @@ extract_CLC = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
           dplyr::select(-contains("0")) 
         w <- as.data.frame(t(apply(X = CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))],
                                    MARGIN = 1,
-                                   FUN = function(X){t(X <- X/max(X)*100)})))
+                                   FUN = function(X){t(X <- X/sum(X)*100)})))
         names(w) <- names(CLCniv1_hab_wide.tmp)[grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))]
         CLCniv1_hab_wide.tmp[,grep("[0-9]",colnames(CLCniv1_hab_wide.tmp))] <- w
         
