@@ -50,7 +50,7 @@
 # prefixe_fichier = "EPOC-ODF2021_"
 # dsnRaster = "C:/Users/Travail/Desktop/Ressource QGis/france/NDVI_France_l93.tif"
 
-extract_NDVI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe_fichier){
+extract_NDVI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, buffer_large, prefixe_fichier){
   
 # packages
   library(sp)
@@ -67,6 +67,7 @@ extract_NDVI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefix
   Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
   Coords <- names_coord
   BuffMed <- buffer_medium
+  BuffLarg <- buffer_large
   
   # Retrait des NAs
   testCoords=match(Coords,names(Point))
@@ -80,6 +81,7 @@ extract_NDVI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefix
   Point_sf <- st_as_sf(x = Point, coords = Coords, crs = 2154)
   
   PointBuffMed <- st_buffer(Point_sf, dist = BuffMed)
+  PointBuffLarg <- st_buffer(Point_sf, dist = BuffLarg)
   
   
 # recuperation des donnes d'altitude BD - Alti (multiple .asc --> 1 raster) ----
@@ -98,11 +100,24 @@ extract_NDVI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefix
   colnames(SpNDVIm) <- c("SpNDVIm")
   SpNDVIm$id <- c(1:nrow(SpNDVIm))
   
+# buffer large
+  cat(paste0(c("\t---\tNDVI moyen dans un buffer de :",BuffLarg," m","\t---\n")))
   
-  SpNDVIm <- dplyr::left_join(SpNDVIm, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
+  SpNDVIl <- exactextractr::exact_extract(x=NDVI, y=PointBuffLarg, fun="mean")
   
-  save(SpNDVIm, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"NDVI_envEPOC.RData")) # securite
-  write.csv(SpNDVIm, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"NDVI_envEPOC.csv"), row.names = F)
+  SpNDVIl <- as.data.frame(SpNDVIl)
+  colnames(SpNDVIl) <- c("SpNDVIl")
+  SpNDVIl$id <- c(1:nrow(SpNDVIl))
+  
+# mise en commun des tables
+  SpNDVI_all <- merge(SpNDVIm,SpNDVIl,all=T)
+  
+  
+  
+  SpNDVI_all <- dplyr::left_join(SpNDVI_all, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
+  
+  save(SpNDVI_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"NDVI_envEPOC.RData")) # securite
+  write.csv(SpNDVI_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"NDVI_envEPOC.csv"), row.names = F)
   
   cat("\n\n\t-------\tExtract NDVI done - check /function_output \t-------\n\n")
   
