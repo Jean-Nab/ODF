@@ -4,6 +4,8 @@ biblio/
 utils/
 OTHER/
 Etude*/
+scripts/Filtrage*
+
 
 .Rproj.user
 .Rhistory
@@ -42,9 +44,16 @@ _*
 *.gml
 *.graphml
 *.gephi
+*.gif
 
 
 
 
 0X*
 *_executable.R
+scripts/functions/XX*
+scripts/Structuration*
+scripts/Figure*
+scripts/Details*
+scripts/Difference*
+scripts/caract_obs*
