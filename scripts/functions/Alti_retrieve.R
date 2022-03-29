@@ -10,10 +10,10 @@
 ##  library(ggplot2)
 ##  
 ##  
-##  fra.adm <- st_transform(st_read(dsn = "C:/Users/Travail/Desktop/Ressource QGis/france/adm/FRA_adm2.shp"),crs=2154)
+##  fra.adm <- st_transform(st_read(dsn = "C:/Users/jean.nabias/Desktop/Ressource QGis/france/adm/FRA_adm2.shp"),crs=2154)
 ##  dsnTable = "C:/git/epoc/DS.v2/epoc_barycentre_liste_density_add.csv"
 ##  Point_sf <- st_as_sf(x = Point, coords = Coords, crs = 2154)
-##  asc_list <- list.files(path = "C://Users/Travail/Desktop/Ressource QGis/france/altitude/BDALTIV2_2-0_75M_ASC_LAMB93-IGN69_FRANCE_2020-09-30",
+##  asc_list <- list.files(path = "C://Users/jean.nabias/Desktop/Ressource QGis/france/altitude/BDALTIV2_2-0_75M_ASC_LAMB93-IGN69_FRANCE_2020-09-30",
 ##                         pattern='asc', full.names=TRUE, recursive = T)
 ##  
 ##  
@@ -33,8 +33,8 @@
 ##
 ##
 ##  # sauvegarde sur disque
-##  # writeRaster(ALTI, filename = "C:/Users/Travail/Desktop/Ressource QGis/france/Altitude.tif", format = "GTiff")
-##  # writeRaster(h, filename = "C:/Users/Travail/Desktop/Ressource QGis/france/Altitude_pente_orientation.tif", format = "raster")
+##  # writeRaster(ALTI, filename = "C:/Users/jean.nabias/Desktop/Ressource QGis/france/Altitude.tif", format = "GTiff")
+##  # writeRaster(h, filename = "C:/Users/jean.nabias/Desktop/Ressource QGis/france/Altitude_pente_orientation.tif", format = "raster")
 
 
 
@@ -84,7 +84,7 @@ extract_Alti = function(dsnTable, names_coord, buffer_medium, buffer_large, pref
     
     
     # recuperation des donnes d'altitude BD - Alti (multiple .asc --> 1 raster) ----
-    ALTI <- stack("C:/Users/Travail/Desktop/Ressource QGis/france/Altitude_pente_orientation.tif")
+    ALTI <- stack("C:/Users/jean.nabias/Desktop/Ressource QGis/france/Altitude_pente_orientation.tif")
 
     
   # extraction de l'altitude/pente/orientation -----
