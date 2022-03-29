@@ -18,7 +18,8 @@
 
 
 
-extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRasterOSO, prefixe_fichier)
+extract_OSO = function(dsnTable, names_coord, buffer_small, buffer_medium, 
+                       buffer_large, dsnRasterOSO, prefixe_fichier)
 {
     # packages
     library(sp)
@@ -28,13 +29,14 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     library(tidyr)
     library(reshape2)
     library(progress)
-	library(data.table)
+	  library(data.table)
     
     # recup' data/raster ----
     cat("\t----\tDebut du chargement des donnees\t----\n")
     
     Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
     Coords <- names_coord
+    BuffSmal <- buffer_small
     BuffMed <- buffer_medium
     BuffLarg <- buffer_large
     
@@ -52,6 +54,7 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     # formation de l'objet spatial
     Point_sf <- st_as_sf(x = Point, coords = Coords, crs = 2154)
     
+    PointBuffSmal <- st_buffer(Point_sf, dist = BuffSmal)
     PointBuffMed <- st_buffer(Point_sf, dist = BuffMed)
     PointBuffLarg <- st_buffer(Point_sf, dist = BuffLarg)
   
@@ -59,6 +62,84 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
     cat("\t----\tFin du chargement des donnees\t----\n")
   
   # EXTRACTION ----
+    
+    # Buffer small ----
+      cat(paste("\t----\tDebut extraction des donnees OSO selon le buffer :",BuffSmal,"m\t----\n"))
+    
+      vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 600) # argument suplementaire ? / add condition : NA/all -> tous
+      # vec.iteration_med <- vec.iteration_med[1:10]
+      
+      OSO_hab_wide_BS <- as.data.frame(matrix(nrow=0,ncol = 1))
+      colnames(OSO_hab_wide_BS) <- "id"
+      
+      # initialisation de la barre de progression
+      pb_s <- progress::progress_bar$new(total = length(vec.iteration_smal),
+                                         format = "Extraction des donnees OSO buffer small [:bar] :percent    Tps ecoule = :elapsedfull",
+                                         clear = F)
+      
+      
+      pb_s$tick(0)
+      Sys.sleep(1/20)
+    
+      
+      # boucle de 600 en 600: ----
+      for(i in vec.iteration_smal){
+        
+        
+        PointBuffSmal.tmp <- PointBuffSmal[i:min((i+599),length(PointBuffSmal$ID_extract)),] # si add condition --> condition - 1
+        
+        
+        OSO_hab.tmp <- raster::extract(x = OSO, 
+                                       y = PointBuffSmal.tmp,
+                                       df=T,
+                                       along=T)
+        
+        
+        # formatage des donnees
+        colnames(OSO_hab.tmp)[1] <- "ID_extract"
+        OSO_hab.tmp$ID_extract <- OSO_hab.tmp$ID_extract + (i - 1)
+        colnames(OSO_hab.tmp)[2] <- "OSO_hab"
+        
+        
+        # gestion dtf des resultats preliminaires -----
+        
+        OSO_hab.tmp <- left_join(OSO_hab.tmp,st_drop_geometry(PointBuffSmal.tmp[,c("id","ID_extract")]), by = "ID_extract")
+        
+        OSO_hab_wide.tmp <- OSO_hab.tmp %>% reshape2::dcast(ID_extract + id ~ OSO_hab, fun.aggregate = length, value.var = "id")
+        
+        OSO_hab_wide_BS <- merge(OSO_hab_wide_BS,OSO_hab_wide.tmp,all=T)
+        
+        
+        # actualisation de la progression
+        pb_s$tick()
+        Sys.sleep(1 / 100)
+        
+      }
+      
+      # correction des NAs (= habitats absent lors de l'extract du point)
+      OSO_hab_wide_BS[is.na(OSO_hab_wide_BS)] <- 0
+      
+      # retrait des habitats 0 ==> zone non couverte par le raster [condition : detection de la colonne "0" du dtf]
+      OSO_hab_wide_BS <- OSO_hab_wide_BS[,if(length(grep("^0$",names(OSO_hab_wide_BS)) > 0)){ -grep("^0$",names(OSO_hab_wide_BS))}else{names(OSO_hab_wide_BS)}]
+      
+      
+      # calcul des proportions d'habitats 
+      OSO_hab_wide_BS[,grep("[0-9]",colnames(OSO_hab_wide_BS))] <- ( OSO_hab_wide_BS[,grep("[0-9]",colnames(OSO_hab_wide_BS))] / 
+                                                                       rowSums(OSO_hab_wide_BS[,grep("[0-9]",colnames(OSO_hab_wide_BS))])
+      ) * 100
+      
+      # rearragement de l'ordre des colonnes
+      OSO_hab_wide_BS <- OSO_hab_wide_BS %>%
+        tidyr::pivot_longer(cols = colnames(OSO_hab_wide_BS)[grep("[0-9]{1,}",colnames(OSO_hab_wide_BS))]) %>%
+        mutate(name = as.numeric(name)) %>%
+        arrange(name) %>%
+        tidyr::pivot_wider(names_from = name, values_from = value)
+      
+      colnames(OSO_hab_wide_BS) <- gsub("([0-9]{1,})","SpOSOs_\\1",colnames(OSO_hab_wide_BS))    
+      save(OSO_hab_wide_BS, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BS_envEPOC.RData")) # securite
+      
+      
+    
     # Buffer medium ----
       cat(paste("\t----\tDebut extraction des donnees OSO selon le buffer :",BuffMed,"m\t----\n"))
       
@@ -132,8 +213,12 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         arrange(name) %>%
         tidyr::pivot_wider(names_from = name, values_from = value)
       
-      colnames(OSO_hab_wide_BM) <- gsub("([0-9]{1,})","SpOSOm_\\1",colnames(OSO_hab_wide_BM))    
+      colnames(OSO_hab_wide_BM) <- gsub("([0-9]{1,})","SpOSOm_\\1",colnames(OSO_hab_wide_BM)) 
+      save(OSO_hab_wide_BM, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BM_envEPOC.RData")) # securite
     
+      
+      OSO_hab_BSBM <- dplyr::left_join(OSO_hab_wide_BS,OSO_hab_wide_BM, by = c("id", "ID_extract")) # jointure small et medium
+      rm(OSO_hab_wide_BS) ; rm(OSO_hab_wide_BM)
       
   
     # Buffer large -------
@@ -207,24 +292,21 @@ extract_OSO = function(dsnTable, names_coord, buffer_medium, buffer_large, dsnRa
         tidyr::pivot_wider(names_from = name, values_from = value)
       
       colnames(OSO_hab_wide_BL) <- gsub("([0-9]{1,})","SpOSOl_\\1",colnames(OSO_hab_wide_BL))    
- 
+      save(OSO_hab_wide_BL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BL_envEPOC.RData")) # securite
+      
   
   
   # jointure des donnes CLC selon les 2 buffers
+  OSO_hab_BSBMBL <- dplyr::left_join(OSO_hab_BSBM,OSO_hab_wide_BL, by = c("id", "ID_extract"))
   
-  OSO_hab_BMBL <- dplyr::left_join(OSO_hab_wide_BM,OSO_hab_wide_BL, by = c("id", "ID_extract"))
+  OSO_hab_BSBMBL <- dplyr::left_join(Point[,c("id","ID_extract","ID_liste",names_coord)],
+                                     OSO_hab_BSBMBL , by = c("id", "ID_extract"))
   
-  OSO_hab_BMBL <- dplyr::left_join(Point[,c("id","ID_extract","ID_liste",names_coord)],
-                                   OSO_hab_BMBL , by = c("id", "ID_extract"))
-  
-  OSO_hab_BMBL <- dplyr::left_join(OSO_hab_BMBL, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
+  OSO_hab_BSBMBL <- dplyr::left_join(OSO_hab_BSBMBL, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
   
   # sauvegarde sur disque
-  
-  save(OSO_hab_wide_BM, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BM_envEPOC.RData")) # securite
-  save(OSO_hab_wide_BL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_BL_envEPOC.RData")) # securite
-  save(OSO_hab_BMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.RData")) # securite
-  write.csv(OSO_hab_BMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.csv"), row.names = F)
+  save(OSO_hab_BSBMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.RData")) # securite
+  write.csv(OSO_hab_BSBMBL, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"OSO_envEPOC.csv"), row.names = F)
   
   
   cat("\n\n\t-------\tExtract OSO done - check /function_output \t-------\n\n")
