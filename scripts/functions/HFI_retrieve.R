@@ -31,7 +31,7 @@
 
 
 
-extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe_fichier){
+extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, buffer_large, prefixe_fichier){
 
 # packages
   library(sp)
@@ -48,6 +48,7 @@ extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe
   Point <- as.data.frame(fread(dsnTable,header=T,stringsAsFactors = F,encoding="UTF-8"))
   Coords <- names_coord
   BuffMed <- buffer_medium
+  BuffLarg <- buffer_large
   
   # Retrait des NAs
   testCoords=match(Coords,names(Point))
@@ -61,16 +62,17 @@ extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe
   Point_sf <- st_as_sf(x = Point, coords = Coords, crs = 2154)
   
   PointBuffMed <- st_buffer(Point_sf, dist = BuffMed)
+  PointBuffLarg <- st_buffer(Point_sf, dist = BuffLarg)
   
   
-  # recuperation des donnes d'altitude BD - Alti (multiple .asc --> 1 raster) ----
+# recuperation des donnes d'altitude BD - Alti (multiple .asc --> 1 raster) ----
   HFI <- raster(dsnRaster)
   
   
-  # extraction de l'altitude/pente/orientation -----
+# extraction de l'altitude/pente/orientation -----
   cat("\t-------\tDebut extraction du HFI (Human footprint index\t-------\n")
   
-  # buffer medium
+# buffer medium
   cat(paste0(c("\t---\tHFI moyen dans un buffer de :",BuffMed," m","\t---\n")))
   
   SpHFIm <- exactextractr::exact_extract(x=HFI, y=PointBuffMed, fun="mean")
@@ -79,11 +81,23 @@ extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe
   colnames(SpHFIm) <- c("SpHFIm")
   SpHFIm$id <- c(1:nrow(SpHFIm))
   
+# buffer large
+  cat(paste0(c("\t---\tHFI moyen dans un buffer de :",BuffLarg," m","\t---\n")))
   
-  SpHFIm <- dplyr::left_join(SpHFIm, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
+  SpHFIl <- exactextractr::exact_extract(x=HFI, y=PointBuffLarg, fun="mean")
   
-  save(SpHFIm, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"HFI_envEPOC.RData")) # securite
-  write.csv(SpHFIm, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"HFI_envEPOC.csv"), row.names = F)
+  SpHFIl <- as.data.frame(SpHFIl)
+  colnames(SpHFIl) <- c("SpHFIl")
+  SpHFIl$id <- c(1:nrow(SpHFIl))
+  
+# mise en commun des tables
+  SpHFI_all <- merge(SpHFIm,SpHFIl,all=T)
+  
+  
+  SpHFI_all <- dplyr::left_join(SpHFI_all, Point[,c("id",Coords,"ID_liste")]) # add d'informations sur les listes
+  
+  save(SpHFI_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"HFI_envEPOC.RData")) # securite
+  write.csv(SpHFI_all, file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"HFI_envEPOC.csv"), row.names = F)
   
   cat("\n\n\t-------\tExtract HFI done - check /function_output \t-------\n\n")
   
@@ -92,28 +106,5 @@ extract_HFI = function(dsnTable, dsnRaster,  names_coord, buffer_medium, prefixe
   
   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
