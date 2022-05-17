@@ -61,3 +61,4 @@ scripts/caract_obs*
 scripts/Etude*
 scripts/*.Rmd
 SDM/scripts/old/*
+SDM/bins/*
