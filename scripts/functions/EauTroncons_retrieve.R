@@ -67,7 +67,7 @@ extract_eauTroncons = function(dsnTable, names_coord,buffer_small, buffer_medium
   
   cat(paste0(c("\t---\tTroncons d'eau dans un buffer de :",BuffSmal," m","\t---\n")))
   
-  vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+  vec.iteration_smal <- seq(from = 1, to = length(PointBuffSmal$ID_extract), by = 1000) # argument suplementaire ? / add condition : NA/all -> tous
   
   TroncSmal <- as.data.frame(matrix(nrow=0,ncol = 1))
   colnames(TroncSmal) <- c("id")
@@ -85,7 +85,7 @@ extract_eauTroncons = function(dsnTable, names_coord,buffer_small, buffer_medium
   
   
   for(i in vec.iteration_smal){
-    Point.tmp <- PointBuffSmal[i:min((i+304),length(PointBuffSmal$ID_extract)),]
+    Point.tmp <- PointBuffSmal[i:min((i+999),length(PointBuffSmal$ID_extract)),]
     
     TroncSmal.tmp <- st_intersection(TRONC, Point.tmp) # intersection en block
     
@@ -137,7 +137,7 @@ extract_eauTroncons = function(dsnTable, names_coord,buffer_small, buffer_medium
   
   cat(paste0(c("\t---\tTroncons d'eau dans un buffer de :",BuffMed," m","\t---\n")))
   
-  vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 305) # argument suplementaire ? / add condition : NA/all -> tous
+  vec.iteration_med <- seq(from = 1, to = length(PointBuffMed$ID_extract), by = 500) # argument suplementaire ? / add condition : NA/all -> tous
   
   TroncMed <- as.data.frame(matrix(nrow=0,ncol = 1))
   colnames(TroncMed) <- c("id")
@@ -155,7 +155,7 @@ extract_eauTroncons = function(dsnTable, names_coord,buffer_small, buffer_medium
   
   
   for(i in vec.iteration_med){
-    Point.tmp <- PointBuffMed[i:min((i+304),length(PointBuffMed$ID_extract)),]
+    Point.tmp <- PointBuffMed[i:min((i+499),length(PointBuffMed$ID_extract)),]
     
     TroncMed.tmp <- st_intersection(TRONC, Point.tmp) # intersection en block
     
