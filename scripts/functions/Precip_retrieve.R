@@ -179,7 +179,9 @@ extract_precipitations <- function(path_to_meteo_nc,tableDaysSites,nbrPreviousDa
   
   print("3. Precipitations extraction for each night OK")
   
-  names(tableDaysSites)[ncol(tableDaysSites)] <- "Sites_precipiationDay"
-  write.csv(tableDaysSites[,c("ID_liste","Sites_precipiationDay")],
+  names(tableDaysSites) <- gsub("rr_day","Sites_precipitationDay",names(tableDaysSites))
+  names(tableDaysSites) <- gsub("_before","_minus",names(tableDaysSites))
+  
+  write.csv(tableDaysSites[,grep("ID_liste|Sites_precipitationDay|barycentre",names(tableDaysSites))],
             file = paste0("C:/git/ODF/output/function_output/",prefixe_fichier,"Precip_envEPOC.csv"), row.names = F)
 }
